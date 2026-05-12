@@ -1,12 +1,18 @@
 using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Text.Json;
 using DreamLauncher.Models;
 
 namespace DreamLauncher.Services;
 
 public sealed class StatusService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private static readonly HttpClient Http = new()
     {
         Timeout = TimeSpan.FromSeconds(2.5)
@@ -18,14 +24,27 @@ public sealed class StatusService
 
         try
         {
-            using var response = await Http.GetAsync(backendUrl);
+            var endpoint = new Uri($"{backendUrl.TrimEnd('/')}/launcher/api/status");
+            using var response = await Http.GetAsync(endpoint);
             stopwatch.Stop();
+
+            var raw = await response.Content.ReadAsStringAsync();
+            var status = TryReadStatus(raw);
+            var offlineServices = status?.Services
+                .Where(service => IsOffline(service.State))
+                .ToList() ?? [];
 
             return new ServiceCheckResult
             {
-                State = ServiceState.Online,
+                State = response.IsSuccessStatusCode && offlineServices.Count == 0
+                    ? ServiceState.Online
+                    : ServiceState.Offline,
                 LatencyMs = stopwatch.ElapsedMilliseconds,
-                StatusCode = (int)response.StatusCode
+                StatusCode = (int)response.StatusCode,
+                Summary = status is null ? null : BuildStatusSummary(status),
+                Error = response.IsSuccessStatusCode
+                    ? BuildOfflineServiceSummary(offlineServices)
+                    : $"HTTP {(int)response.StatusCode}"
             };
         }
         catch (Exception ex)
@@ -74,5 +93,48 @@ public sealed class StatusService
                 Error = ex.Message
             };
         }
+    }
+
+    private static LauncherStatusResponse? TryReadStatus(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<LauncherStatusResponse>(raw, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string BuildStatusSummary(LauncherStatusResponse status)
+    {
+        if (status.Services.Count == 0)
+        {
+            return status.Status;
+        }
+
+        var parts = status.Services
+            .Take(4)
+            .Select(service => $"{service.Label}: {service.State}");
+
+        return string.Join(", ", parts);
+    }
+
+    private static string? BuildOfflineServiceSummary(List<LauncherServiceStatus> offlineServices)
+    {
+        return offlineServices.Count == 0
+            ? null
+            : string.Join(", ", offlineServices.Select(service => $"{service.Label}: {service.Details ?? service.State}"));
+    }
+
+    private static bool IsOffline(string state)
+    {
+        return state.Equals("offline", StringComparison.OrdinalIgnoreCase);
     }
 }

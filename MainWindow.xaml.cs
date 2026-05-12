@@ -145,6 +145,7 @@ public partial class MainWindow : Window
 
             SetStatus(BackendStatusPill, BackendStatusText, "Backend", backendTask.Result);
             SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", gameServerTask.Result);
+            AddStatusSummary("Backend services", backendTask.Result);
             AddLog("Status checked.");
         }
         catch (Exception ex)
@@ -480,7 +481,7 @@ public partial class MainWindow : Window
         text.Text = result.State switch
         {
             ServiceState.Online => $"{label}: online ({result.LatencyMs} ms{FormatStatusCode(result)})",
-            ServiceState.Offline => $"{label}: offline ({result.Error})",
+            ServiceState.Offline => $"{label}: offline ({result.Error ?? result.Summary})",
             _ => $"{label}: checking..."
         };
     }
@@ -488,5 +489,13 @@ public partial class MainWindow : Window
     private static string FormatStatusCode(ServiceCheckResult result)
     {
         return result.StatusCode is null ? string.Empty : $", HTTP {result.StatusCode}";
+    }
+
+    private void AddStatusSummary(string label, ServiceCheckResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.Summary))
+        {
+            AddLog($"{label}: {result.Summary}");
+        }
     }
 }

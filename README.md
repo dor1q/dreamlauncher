@@ -9,6 +9,7 @@ Dream Launcher is a C# + WPF desktop launcher for the Dream project. It is focus
 | Desktop shell | WPF app on .NET 8 |
 | Authentication | Discord OAuth in the launcher |
 | Backend identity | Discord access token exchange through the Dream backend |
+| Backend status | Reads `/launcher/api/status` and logs service-level health |
 | Local library | Build manifest plus existing folder import |
 | Launch flow | Executable validation, exchange-code placeholders, process start |
 | Runtime control | Launch state, known process close action, runtime log |
@@ -123,6 +124,14 @@ http://127.0.0.1:53121/callback/
 6. Keep the launcher callback port at `53121`, or change the Discord redirect URI to match the port entered in the launcher.
 
 ## Backend Contract
+
+For service status, the launcher calls:
+
+```text
+GET /launcher/api/status
+```
+
+Expected backend status response includes overall status, uptime, and service entries for backend API, MongoDB, XMPP, and matchmaker.
 
 Before launch, the launcher calls:
 

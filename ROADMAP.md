@@ -19,7 +19,7 @@ This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: a
 | Discord authorization | Done | Browser OAuth callback through local loopback listener |
 | Dream backend identity | Done | Launcher requests a backend exchange code before game start |
 | Local build library | Active | Existing folder import is ready; remote manifests are next |
-| Status surface | Queued | Needs backend status endpoint and service-level data |
+| Status surface | Active | Backend status endpoint is wired; richer UI grouping is next |
 | Downloads and repair | Queued | Needs official manifest format and content source |
 | Packaging and updates | Queued | Requires release channel decision |
 
@@ -29,7 +29,7 @@ This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: a
 | --- | --- | --- |
 | P0 | Keep WPF build green | Launcher remains easy to iterate on |
 | P0 | Finish local environment setup | `dotnet`, MongoDB, backend, and VS tooling work from normal shells |
-| P1 | Add backend status contract | Launcher can show real service health instead of only TCP checks |
+| P1 | Expand status UI grouping | Launcher can show each backend service without relying on logs |
 | P1 | Harden account-link errors | User sees clear messages when Discord is not linked to a Dream account |
 | P2 | Prepare build manifest schema | Future install, verify, and repair work has a stable data contract |
 
@@ -65,10 +65,12 @@ Goal: launch a selected local build only after a valid Discord-backed Dream sess
 
 Goal: replace guesswork with a clear operational status page.
 
-- [ ] Add backend `/launcher/api/status`.
-- [ ] Return backend, MongoDB, XMPP, matchmaker, and game-server status.
+- [x] Add backend `/launcher/api/status`.
+- [x] Return backend, MongoDB, XMPP, and matchmaker status.
+- [x] Keep TCP game-server check as a fallback signal.
+- [x] Read backend status in launcher and log service-level health.
 - [ ] Add launcher status cards grouped by service.
-- [ ] Keep TCP game-server check as a fallback signal.
+- [ ] Add game-server process/session status once backend exposes it.
 - [ ] Add recent incidents or maintenance message when the backend exposes it.
 - [ ] Move from polling to WebSocket/SSE after backend events exist.
 
