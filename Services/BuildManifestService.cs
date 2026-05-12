@@ -37,6 +37,46 @@ public sealed class BuildManifestService
         return new BuildManifest { Builds = validBuilds };
     }
 
+    public async Task SaveAsync(BuildManifest manifest)
+    {
+        await EnsureManifestAsync();
+        await JsonFile.WriteAsync(ManifestPath, manifest);
+    }
+
+    public async Task<BuildDefinition> AddExistingBuildAsync(string rootPath)
+    {
+        if (string.IsNullOrWhiteSpace(rootPath))
+        {
+            throw new InvalidOperationException("Build folder is required.");
+        }
+
+        var fullRoot = Path.GetFullPath(rootPath);
+        var executable = Path.Combine(fullRoot, BuildDefinition.DefaultExecutable);
+
+        if (!File.Exists(executable))
+        {
+            throw new FileNotFoundException("Fortnite executable was not found in this folder.", executable);
+        }
+
+        var manifest = await LoadAsync();
+        var folderName = new DirectoryInfo(fullRoot).Name;
+        var build = new BuildDefinition
+        {
+            Id = CreateBuildId(folderName),
+            Name = string.IsNullOrWhiteSpace(folderName) ? "Imported Build" : folderName,
+            Path = fullRoot,
+            Executable = BuildDefinition.DefaultExecutable,
+            Arguments = BuildDefinition.DefaultArguments()
+        };
+
+        manifest.Builds.RemoveAll(item =>
+            string.Equals(Path.GetFullPath(item.Path), fullRoot, StringComparison.OrdinalIgnoreCase));
+        manifest.Builds.Add(build);
+
+        await SaveAsync(manifest);
+        return build;
+    }
+
     private static string ResolveAppRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -52,5 +92,21 @@ public sealed class BuildManifestService
         }
 
         return AppContext.BaseDirectory;
+    }
+
+    private static string CreateBuildId(string value)
+    {
+        var cleaned = new string(value
+            .ToLowerInvariant()
+            .Select(ch => char.IsLetterOrDigit(ch) ? ch : '-')
+            .ToArray())
+            .Trim('-');
+
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            cleaned = "imported-build";
+        }
+
+        return $"{cleaned}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
     }
 }

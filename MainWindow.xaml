@@ -88,7 +88,9 @@
                     <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,1,0,0" Padding="16">
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="LaunchButton" Content="Launch" Style="{StaticResource PrimaryButton}" Width="140" Click="Launch_Click" IsEnabled="False" />
+                            <Button Content="Add folder" Margin="10,0,0,0" Click="AddBuildFolder_Click" />
                             <Button Content="Open manifest" Margin="10,0,0,0" Click="OpenManifest_Click" />
+                            <Button Content="Close game" Margin="10,0,0,0" Click="CloseGame_Click" />
                         </StackPanel>
                     </Border>
                 </Grid>

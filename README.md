@@ -9,6 +9,8 @@ C# + WPF desktop launcher MVP for Dream.
 - Game server TCP status check.
 - Local build manifest in `config/builds.json`.
 - Build picker.
+- Existing build folder import.
+- Close known Fortnite/Epic processes from the launcher.
 - Selected executable launch after Discord login.
 - Dream backend exchange-code request before launch.
 - Runtime logs.

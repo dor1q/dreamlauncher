@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using DreamLauncher.Models;
 using DreamLauncher.Services;
+using Forms = System.Windows.Forms;
 
 namespace DreamLauncher;
 
@@ -158,6 +159,33 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void AddBuildFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var dialog = new Forms.FolderBrowserDialog
+            {
+                Description = "Select the Fortnite build root folder",
+                ShowNewFolderButton = false,
+                UseDescriptionForTitle = true
+            };
+
+            if (dialog.ShowDialog() != Forms.DialogResult.OK)
+            {
+                return;
+            }
+
+            var build = await _buildManifestService.AddExistingBuildAsync(dialog.SelectedPath);
+            await LoadBuildsAsync();
+            BuildsListBox.SelectedItem = _builds.FirstOrDefault(item => item.Id == build.Id);
+            AddLog($"Imported build: {build.Name}");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"Import build error: {ex.Message}");
+        }
+    }
+
     private void BuildsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateLaunchButton();
@@ -181,6 +209,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CloseGame_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var closed = _launchService.CloseGameProcesses();
+            AddLog(closed == 0 ? "No game processes were running." : $"Closed {closed} game process(es).");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"Close game error: {ex.Message}");
+        }
+    }
+
     private async void Launch_Click(object sender, RoutedEventArgs e)
     {
         if (_discordSession is null || _discordSession.IsExpired)
@@ -199,6 +240,12 @@ public partial class MainWindow : Window
         {
             LaunchButton.IsEnabled = false;
             _settings = ReadSettingsFromInputs();
+
+            if (_launchService.IsGameRunning())
+            {
+                AddLog("Game process is already running; close it first if launch fails.");
+            }
+
             AddLog("Requesting Dream exchange code.");
 
             var exchange = await _dreamBackendAuthService.CreateExchangeCodeAsync(_settings, _discordSession);
