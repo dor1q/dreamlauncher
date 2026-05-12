@@ -10,6 +10,7 @@ C# + WPF desktop launcher MVP for Dream.
 - Local build manifest in `config/builds.json`.
 - Build picker.
 - Selected executable launch after Discord login.
+- Dream backend exchange-code request before launch.
 - Runtime logs.
 
 The project does not include game files, proprietary assets, private keys, or credentials.
@@ -44,7 +45,11 @@ Example build entry:
   "name": "Season 5 Local",
   "path": "D:\\Games\\Dream\\Season5",
   "executable": "FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe",
-  "arguments": []
+  "arguments": [
+    "-AUTH_LOGIN=unused",
+    "-AUTH_PASSWORD={exchangeCode}",
+    "-AUTH_TYPE=exchangecode"
+  ]
 }
 ```
 
@@ -65,3 +70,18 @@ http://127.0.0.1:53121/callback/
 5. Keep the launcher callback port at `53121`, or change the Discord redirect URI to match the port you enter.
 
 Do not commit a Discord client secret, bot token, or saved session file.
+
+## Backend integration
+
+The launcher calls:
+
+```text
+POST /launcher/api/auth/discord/exchange
+```
+
+The backend validates the Discord access token, finds the Dream account by `discordId`, and returns a one-time exchange code. Build arguments can use these placeholders:
+
+- `{exchangeCode}`
+- `{accountId}`
+- `{displayName}`
+- `{discordId}`

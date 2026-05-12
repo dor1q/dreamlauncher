@@ -9,6 +9,9 @@ public sealed class BuildDefinition
     public List<string> Arguments { get; init; } = [];
     public Dictionary<string, string> Env { get; init; } = [];
 
+    public bool UsesExchangeCode =>
+        Arguments.Any(argument => argument.Contains("{exchangeCode}", StringComparison.OrdinalIgnoreCase));
+
     public bool IsValid =>
         !string.IsNullOrWhiteSpace(Id) &&
         !string.IsNullOrWhiteSpace(Name) &&

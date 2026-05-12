@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private readonly LaunchService _launchService = new();
     private readonly DiscordAuthService _discordAuthService = new();
     private readonly DiscordSessionService _discordSessionService = new();
+    private readonly DreamBackendAuthService _dreamBackendAuthService = new();
     private readonly ObservableCollection<BuildDefinition> _builds = [];
     private readonly ObservableCollection<string> _logs = [];
     private LauncherSettings _settings = LauncherSettings.Default;
@@ -180,7 +181,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Launch_Click(object sender, RoutedEventArgs e)
+    private async void Launch_Click(object sender, RoutedEventArgs e)
     {
         if (_discordSession is null || _discordSession.IsExpired)
         {
@@ -196,12 +197,34 @@ public partial class MainWindow : Window
 
         try
         {
-            var executable = _launchService.Launch(build);
+            LaunchButton.IsEnabled = false;
+            _settings = ReadSettingsFromInputs();
+            AddLog("Requesting Dream exchange code.");
+
+            var exchange = await _dreamBackendAuthService.CreateExchangeCodeAsync(_settings, _discordSession);
+            var context = new LaunchContext
+            {
+                ExchangeCode = exchange.Code,
+                AccountId = exchange.AccountId,
+                DisplayName = exchange.DisplayName,
+                DiscordId = _discordSession.User.Id
+            };
+
+            if (!build.UsesExchangeCode)
+            {
+                AddLog("Build arguments do not contain {exchangeCode}; game auth args may be missing.");
+            }
+
+            var executable = _launchService.Launch(build, context);
             AddLog($"Launched {executable}");
         }
         catch (Exception ex)
         {
             AddLog($"Launch error: {ex.Message}");
+        }
+        finally
+        {
+            UpdateLaunchButton();
         }
     }
 
