@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+
+# Local launcher state
+config/builds.json
+*.log
+
+# OS files
+Thumbs.db
+Desktop.ini
