@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -123,7 +125,7 @@ public sealed class DiscordAuthService
             {
             }
 
-            var parts = requestLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var parts = requestLine.Split([' '], StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 2)
             {
                 throw new InvalidOperationException("OAuth callback request was invalid.");

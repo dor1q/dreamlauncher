@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Net.Http;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +8,7 @@ using System.Windows.Media;
 using DreamLauncher.Models;
 using DreamLauncher.Services;
 using Forms = System.Windows.Forms;
+using MediaBrush = System.Windows.Media.Brush;
 
 namespace DreamLauncher;
 
@@ -331,9 +333,9 @@ public partial class MainWindow : Window
     private void UpdateDiscordAuthUi()
     {
         var signedIn = _discordSession is not null && !_discordSession.IsExpired;
-        var muted = (Brush)FindResource("MutedBrush");
-        var accent = (Brush)FindResource("AccentBrush");
-        var border = (Brush)FindResource("BorderBrushColor");
+        var muted = (MediaBrush)FindResource("MutedBrush");
+        var accent = (MediaBrush)FindResource("AccentBrush");
+        var border = (MediaBrush)FindResource("BorderBrushColor");
 
         DiscordAuthPill.BorderBrush = signedIn ? accent : border;
         DiscordAuthTextBlock.Foreground = signedIn ? accent : muted;
@@ -369,10 +371,10 @@ public partial class MainWindow : Window
     {
         _launchState = state;
 
-        var muted = (Brush)FindResource("MutedBrush");
-        var accent = (Brush)FindResource("AccentBrush");
-        var danger = (Brush)FindResource("DangerBrush");
-        var border = (Brush)FindResource("BorderBrushColor");
+        var muted = (MediaBrush)FindResource("MutedBrush");
+        var accent = (MediaBrush)FindResource("AccentBrush");
+        var danger = (MediaBrush)FindResource("DangerBrush");
+        var border = (MediaBrush)FindResource("BorderBrushColor");
 
         LaunchStatePill.BorderBrush = state switch
         {
@@ -456,10 +458,10 @@ public partial class MainWindow : Window
 
     private void SetStatus(Border pill, TextBlock text, string label, ServiceCheckResult result)
     {
-        var muted = (Brush)FindResource("MutedBrush");
-        var accent = (Brush)FindResource("AccentBrush");
-        var danger = (Brush)FindResource("DangerBrush");
-        var border = (Brush)FindResource("BorderBrushColor");
+        var muted = (MediaBrush)FindResource("MutedBrush");
+        var accent = (MediaBrush)FindResource("AccentBrush");
+        var danger = (MediaBrush)FindResource("DangerBrush");
+        var border = (MediaBrush)FindResource("BorderBrushColor");
 
         pill.BorderBrush = result.State switch
         {

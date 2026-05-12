@@ -1,23 +1,57 @@
 # Dream Launcher Roadmap
 
-This roadmap keeps Dream Launcher focused on the features needed for a reliable old-Fortnite launcher on C# + WPF.
+This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: authenticate the player, understand local builds, communicate with the Dream backend, launch reliably, and surface problems clearly.
 
-## Product Areas
+## Status Legend
 
-- app shell with home, library, downloads, status, store/extra pages, leaderboard, and settings;
-- local library for installed Fortnite builds;
-- build detection from an existing install path;
-- launch state with close-game controls;
-- backend exchange-code flow before launching;
-- chunked download, verify, repair, cancel, progress, speed, and ETA;
-- live backend communication through WebSocket events;
-- match/server status grouped by state and region;
-- user options for content directory, launch args, gameplay tweaks, theme/layout, and account actions;
-- auto-update packaging and clearer reportable errors.
+| Mark | Meaning |
+| --- | --- |
+| Done | Implemented and build-verified |
+| Active | Current implementation track |
+| Queued | Planned but not started |
+| Blocked | Waiting on backend, assets, infrastructure, or product decision |
 
-## Phase 1 - Launch And Library Foundation
+## Product Snapshot
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| WPF app foundation | Done | .NET 8 WPF shell, settings, services, local runtime files |
+| Discord authorization | Done | Browser OAuth callback through local loopback listener |
+| Dream backend identity | Done | Launcher requests a backend exchange code before game start |
+| Local build library | Active | Existing folder import is ready; remote manifests are next |
+| Status surface | Queued | Needs backend status endpoint and service-level data |
+| Downloads and repair | Queued | Needs official manifest format and content source |
+| Packaging and updates | Queued | Requires release channel decision |
+
+## Now
+
+| Priority | Work | Outcome |
+| --- | --- | --- |
+| P0 | Keep WPF build green | Launcher remains easy to iterate on |
+| P0 | Finish local environment setup | `dotnet`, MongoDB, backend, and VS tooling work from normal shells |
+| P1 | Add backend status contract | Launcher can show real service health instead of only TCP checks |
+| P1 | Harden account-link errors | User sees clear messages when Discord is not linked to a Dream account |
+| P2 | Prepare build manifest schema | Future install, verify, and repair work has a stable data contract |
+
+## Phase 0 - Repository And Environment
+
+Goal: make the repository easy to clone, build, run, and continue.
+
+- [x] WPF solution committed.
+- [x] GitHub remote configured.
+- [x] README explains setup, auth, build manifest, and backend contract.
+- [x] Roadmap split into clear implementation phases.
+- [x] Local setup checklist documented.
+- [x] Build verified with .NET 8 SDK.
+- [ ] Add CI build after final toolchain paths are stable.
+
+## Phase 1 - Authentication And Launch Foundation
+
+Goal: launch a selected local build only after a valid Discord-backed Dream session exists.
 
 - [x] Discord OAuth login in launcher.
+- [x] Local loopback callback listener.
+- [x] Saved local Discord session.
 - [x] Backend endpoint that converts Discord login into a Dream exchange code.
 - [x] Exchange-code placeholders in build launch arguments.
 - [x] Import an existing build folder from the UI.
@@ -25,39 +59,79 @@ This roadmap keeps Dream Launcher focused on the features needed for a reliable 
 - [x] Track launch state: idle, launching, launched, closing.
 - [x] Close known Fortnite/Epic processes from the launcher.
 - [x] Show cleaner launch errors that users can report.
+- [ ] Add explicit "Discord account is not linked" state once backend returns a stable error code.
 
-## Phase 2 - Real Status Surface
+## Phase 2 - Real Service Status
 
-- [ ] Add backend `/launcher/api/status` for backend, XMPP, matchmaker, and game server state.
-- [ ] Add launcher status page/cards grouped by service.
-- [ ] Poll status first, then move to WebSocket/SSE once backend events exist.
-- [ ] Show active/recent matches when backend exposes them.
+Goal: replace guesswork with a clear operational status page.
 
-## Phase 3 - Downloads, Verify, Repair
+- [ ] Add backend `/launcher/api/status`.
+- [ ] Return backend, MongoDB, XMPP, matchmaker, and game-server status.
+- [ ] Add launcher status cards grouped by service.
+- [ ] Keep TCP game-server check as a fallback signal.
+- [ ] Add recent incidents or maintenance message when the backend exposes it.
+- [ ] Move from polling to WebSocket/SSE after backend events exist.
 
-- [ ] Define a Dream manifest format for available builds.
+## Phase 3 - Builds, Downloads, Verify, Repair
+
+Goal: let the launcher manage game builds instead of only launching manually imported folders.
+
+- [ ] Define official Dream build manifest format.
 - [ ] Add content directory setting.
-- [ ] Add install/verify/repair UI.
-- [ ] Add progress, speed, ETA, and cancel support.
-- [ ] Decide whether downloads are simple file manifests first or chunked manifests later.
+- [ ] List available remote builds.
+- [ ] Add install action.
+- [ ] Add file verification.
+- [ ] Add repair action for missing or changed files.
+- [ ] Add progress, speed, ETA, pause/cancel, and retry behavior.
+- [ ] Add disk-space checks before install.
 
-## Phase 4 - Settings And Gameplay Tweaks
+## Phase 4 - Settings And Player Controls
+
+Goal: keep useful controls visible without turning settings into a dumping ground.
 
 - [ ] Add custom launch arguments.
-- [ ] Add optional gameplay flags such as simple edit, disable pre-edits, and reset on release only when the client/server supports them.
-- [ ] Add layout preferences for compact/list build views.
-- [ ] Add theme basics without making the launcher depend on a skin system too early.
+- [ ] Add compact/list library layout preference.
+- [ ] Add theme basics.
+- [ ] Add account sign-out and session refresh.
+- [ ] Add gameplay flags only when the client/server support them.
+- [ ] Add config validation before saving settings.
 
 ## Phase 5 - Release Quality
 
-- [ ] Package installer builds.
-- [ ] Add auto-update strategy.
-- [ ] Add crash/error report export.
-- [ ] Add CI once the local .NET SDK is installed.
+Goal: make the launcher safe to distribute to real users.
 
-## Phase 6 - Optional Product Pages
+- [ ] Create installer build.
+- [ ] Decide update channel strategy.
+- [ ] Add auto-update implementation.
+- [ ] Add signed release artifacts if distribution requires it.
+- [ ] Add crash report export.
+- [ ] Add user-safe diagnostics bundle.
+- [ ] Add CI checks for build and formatting.
 
-- [ ] News/home feed.
+## Phase 6 - Product Pages
+
+Goal: add extra pages only when real backend data exists.
+
+- [ ] Home/news feed.
+- [ ] Account overview.
+- [ ] Friends or activity.
 - [ ] Leaderboard.
-- [ ] Friends/activity.
-- [ ] Store/donate pages if the backend has real data for them.
+- [ ] Store/donate surface.
+- [ ] Admin-maintained announcements.
+
+## Definition Of Done
+
+Every roadmap item is complete only when:
+
+- the launcher builds without warnings or errors;
+- the UI state is clear for success, loading, and failure;
+- secrets and local sessions are not committed;
+- errors include enough context for support;
+- README or roadmap changes match the implemented behavior.
+
+## Backlog Guardrails
+
+- Prefer working launch and status features before decorative pages.
+- Keep Discord authentication as the primary identity path.
+- Keep local build management explicit and inspectable.
+- Do not commit game files, tokens, client secrets, or user-specific runtime state.
