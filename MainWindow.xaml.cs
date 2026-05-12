@@ -13,9 +13,12 @@ public partial class MainWindow : Window
     private readonly BuildManifestService _buildManifestService = new();
     private readonly StatusService _statusService = new();
     private readonly LaunchService _launchService = new();
+    private readonly DiscordAuthService _discordAuthService = new();
+    private readonly DiscordSessionService _discordSessionService = new();
     private readonly ObservableCollection<BuildDefinition> _builds = [];
     private readonly ObservableCollection<string> _logs = [];
     private LauncherSettings _settings = LauncherSettings.Default;
+    private DiscordSession? _discordSession;
 
     public MainWindow()
     {
@@ -24,11 +27,13 @@ public partial class MainWindow : Window
         LogListBox.ItemsSource = _logs;
         ManifestPathTextBlock.Text = _buildManifestService.ManifestPath;
         SettingsPathTextBlock.Text = _settingsService.SettingsPath;
+        SessionPathTextBlock.Text = _discordSessionService.SessionPath;
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         await LoadSettingsAsync();
+        await LoadDiscordSessionAsync();
         await LoadBuildsAsync();
         AddLog("Launcher loaded.");
     }
@@ -39,6 +44,15 @@ public partial class MainWindow : Window
         BackendUrlTextBox.Text = _settings.BackendUrl;
         GameServerHostTextBox.Text = _settings.GameServerHost;
         GameServerPortTextBox.Text = _settings.GameServerPort.ToString();
+        DiscordClientIdTextBox.Text = _settings.DiscordClientId;
+        DiscordClientSecretPasswordBox.Password = _settings.DiscordClientSecret;
+        DiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
+    }
+
+    private async Task LoadDiscordSessionAsync()
+    {
+        _discordSession = await _discordSessionService.LoadAsync();
+        UpdateDiscordAuthUi();
     }
 
     private async Task LoadBuildsAsync()
@@ -52,7 +66,7 @@ public partial class MainWindow : Window
         }
 
         BuildsListBox.SelectedIndex = _builds.Count > 0 ? 0 : -1;
-        LaunchButton.IsEnabled = BuildsListBox.SelectedItem is BuildDefinition;
+        UpdateLaunchButton();
         AddLog($"Loaded {_builds.Count} build(s).");
     }
 
@@ -60,11 +74,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            _settings = LauncherSettings.FromInput(
-                BackendUrlTextBox.Text,
-                GameServerHostTextBox.Text,
-                GameServerPortTextBox.Text);
-
+            _settings = ReadSettingsFromInputs();
             await _settingsService.SaveAsync(_settings);
             AddLog("Settings saved.");
         }
@@ -72,6 +82,38 @@ public partial class MainWindow : Window
         {
             AddLog($"Settings error: {ex.Message}");
         }
+    }
+
+    private async void LoginDiscord_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            _settings = ReadSettingsFromInputs();
+            await _settingsService.SaveAsync(_settings);
+
+            LoginDiscordButton.IsEnabled = false;
+            AddLog("Opening Discord login.");
+
+            _discordSession = await _discordAuthService.SignInAsync(_settings);
+            await _discordSessionService.SaveAsync(_discordSession);
+            AddLog($"Signed in as {_discordSession.User.DisplayName}.");
+        }
+        catch (Exception ex)
+        {
+            AddLog($"Discord login error: {ex.Message}");
+        }
+        finally
+        {
+            UpdateDiscordAuthUi();
+        }
+    }
+
+    private async void LogoutDiscord_Click(object sender, RoutedEventArgs e)
+    {
+        await _discordSessionService.ClearAsync();
+        _discordSession = null;
+        UpdateDiscordAuthUi();
+        AddLog("Signed out of Discord.");
     }
 
     private async void CheckStatus_Click(object sender, RoutedEventArgs e)
@@ -83,10 +125,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            _settings = LauncherSettings.FromInput(
-                BackendUrlTextBox.Text,
-                GameServerHostTextBox.Text,
-                GameServerPortTextBox.Text);
+            _settings = ReadSettingsFromInputs();
 
             SetStatus(BackendStatusPill, BackendStatusText, "Backend", ServiceCheckResult.NotChecked);
             SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", ServiceCheckResult.NotChecked);
@@ -120,7 +159,7 @@ public partial class MainWindow : Window
 
     private void BuildsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        LaunchButton.IsEnabled = BuildsListBox.SelectedItem is BuildDefinition;
+        UpdateLaunchButton();
 
         if (BuildsListBox.SelectedItem is BuildDefinition build)
         {
@@ -143,6 +182,13 @@ public partial class MainWindow : Window
 
     private void Launch_Click(object sender, RoutedEventArgs e)
     {
+        if (_discordSession is null || _discordSession.IsExpired)
+        {
+            AddLog("Launch blocked: Discord login is required.");
+            UpdateDiscordAuthUi();
+            return;
+        }
+
         if (BuildsListBox.SelectedItem is not BuildDefinition build)
         {
             return;
@@ -162,6 +208,43 @@ public partial class MainWindow : Window
     private void ClearLogs_Click(object sender, RoutedEventArgs e)
     {
         _logs.Clear();
+    }
+
+    private LauncherSettings ReadSettingsFromInputs()
+    {
+        return LauncherSettings.FromInput(
+            BackendUrlTextBox.Text,
+            GameServerHostTextBox.Text,
+            GameServerPortTextBox.Text,
+            DiscordClientIdTextBox.Text,
+            DiscordClientSecretPasswordBox.Password,
+            DiscordRedirectPortTextBox.Text);
+    }
+
+    private void UpdateDiscordAuthUi()
+    {
+        var signedIn = _discordSession is not null && !_discordSession.IsExpired;
+        var muted = (Brush)FindResource("MutedBrush");
+        var accent = (Brush)FindResource("AccentBrush");
+        var border = (Brush)FindResource("BorderBrushColor");
+
+        DiscordAuthPill.BorderBrush = signedIn ? accent : border;
+        DiscordAuthTextBlock.Foreground = signedIn ? accent : muted;
+        DiscordAuthTextBlock.Text = signedIn
+            ? $"Discord: {_discordSession!.User.DisplayName}"
+            : "Discord: signed out";
+
+        LoginDiscordButton.IsEnabled = !signedIn;
+        LogoutDiscordButton.IsEnabled = signedIn;
+        UpdateLaunchButton();
+    }
+
+    private void UpdateLaunchButton()
+    {
+        LaunchButton.IsEnabled =
+            BuildsListBox.SelectedItem is BuildDefinition &&
+            _discordSession is not null &&
+            !_discordSession.IsExpired;
     }
 
     private void AddLog(string message)

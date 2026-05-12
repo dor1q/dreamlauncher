@@ -98,50 +98,74 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="72" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,0,1" Padding="18">
                         <Grid>
                             <StackPanel>
-                                <TextBlock Text="CONNECTION" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                                <TextBlock Text="Settings" FontSize="20" FontWeight="SemiBold" />
+                                <TextBlock Text="ACCOUNT" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
+                                <TextBlock Text="Discord login" FontSize="20" FontWeight="SemiBold" />
                             </StackPanel>
                             <Button Content="Check" HorizontalAlignment="Right" Click="CheckStatus_Click" />
                         </Grid>
                     </Border>
 
-                    <StackPanel Grid.Row="1" Margin="16">
-                        <TextBlock Text="Backend URL" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                        <TextBox x:Name="BackendUrlTextBox" Margin="0,7,0,14" />
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="16">
+                            <Border x:Name="DiscordAuthPill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="16" Padding="12,8" Margin="0,0,0,14">
+                                <TextBlock x:Name="DiscordAuthTextBlock" Text="Discord: signed out" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
+                            </Border>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="12" />
-                                <ColumnDefinition Width="112" />
-                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Discord client id" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                            <TextBox x:Name="DiscordClientIdTextBox" Margin="0,7,0,14" />
 
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Game server host" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                                <TextBox x:Name="GameServerHostTextBox" Margin="0,7,0,0" />
+                            <TextBlock Text="Discord client secret" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                            <PasswordBox x:Name="DiscordClientSecretPasswordBox" Margin="0,7,0,14" />
+
+                            <TextBlock Text="Callback port" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                            <TextBox x:Name="DiscordRedirectPortTextBox" Margin="0,7,0,14" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                                <Button x:Name="LoginDiscordButton" Content="Login with Discord" Style="{StaticResource PrimaryButton}" Width="170" Click="LoginDiscord_Click" />
+                                <Button x:Name="LogoutDiscordButton" Content="Logout" Margin="10,0,0,0" Width="90" Click="LogoutDiscord_Click" IsEnabled="False" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Port" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                                <TextBox x:Name="GameServerPortTextBox" Margin="0,7,0,0" />
-                            </StackPanel>
-                        </Grid>
+                            <Border BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,1,0,0" Margin="0,0,0,16" />
 
-                        <Button Content="Save settings" Style="{StaticResource PrimaryButton}" Margin="0,16,0,0" Click="SaveSettings_Click" />
-                    </StackPanel>
+                            <TextBlock Text="Backend URL" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                            <TextBox x:Name="BackendUrlTextBox" Margin="0,7,0,14" />
 
-                    <StackPanel Grid.Row="2" Margin="16" VerticalAlignment="Bottom">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="112" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Game server host" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                                    <TextBox x:Name="GameServerHostTextBox" Margin="0,7,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Port" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                                    <TextBox x:Name="GameServerPortTextBox" Margin="0,7,0,0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Button Content="Save settings" Style="{StaticResource PrimaryButton}" Margin="0,16,0,0" Click="SaveSettings_Click" />
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" Margin="16">
                         <TextBlock Text="BUILD MANIFEST" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
                         <TextBlock x:Name="ManifestPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,5,0,12" />
                         <TextBlock Text="SETTINGS FILE" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                        <TextBlock x:Name="SettingsPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,5,0,0" />
+                        <TextBlock x:Name="SettingsPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,5,0,12" />
+                        <TextBlock Text="SESSION FILE" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
+                        <TextBlock x:Name="SessionPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,5,0,0" />
                     </StackPanel>
                 </Grid>
             </Border>

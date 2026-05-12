@@ -48,6 +48,15 @@
             <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
         </Style>
 
+        <Style TargetType="PasswordBox">
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Background" Value="#0D1425" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrushColor}" />
+            <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
+        </Style>
+
         <Style TargetType="ListBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />

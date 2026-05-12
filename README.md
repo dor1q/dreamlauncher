@@ -4,11 +4,12 @@ C# + WPF desktop launcher MVP for Dream.
 
 ## Current MVP
 
+- Discord OAuth login.
 - Backend URL settings.
 - Game server TCP status check.
 - Local build manifest in `config/builds.json`.
 - Build picker.
-- Selected executable launch.
+- Selected executable launch after Discord login.
 - Runtime logs.
 
 The project does not include game files, proprietary assets, private keys, or credentials.
@@ -48,3 +49,19 @@ Example build entry:
 ```
 
 Settings are stored in `%APPDATA%\Dream Launcher\settings.json`.
+Discord sessions are stored in `%APPDATA%\Dream Launcher\discord-session.json`.
+
+## Discord OAuth setup
+
+1. Create an application in the Discord Developer Portal.
+2. In OAuth2 settings, add this redirect URI:
+
+```text
+http://127.0.0.1:53121/callback/
+```
+
+3. Put the application Client ID into the launcher settings.
+4. Put the Client Secret into the launcher settings. It is saved only in the local `%APPDATA%` settings file.
+5. Keep the launcher callback port at `53121`, or change the Discord redirect URI to match the port you enter.
+
+Do not commit a Discord client secret, bot token, or saved session file.

@@ -3,9 +3,13 @@ obj/
 .vs/
 .vscode/
 .idea/
+*.user
+*.suo
 
 # Local launcher state
 config/builds.json
+settings.json
+discord-session.json
 *.log
 
 # OS files
