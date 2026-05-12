@@ -1,12 +1,8 @@
 # Dream Launcher Roadmap
 
-This roadmap uses `retracmp/launcher2` as the product reference while keeping Dream Launcher on C# + WPF.
+This roadmap keeps Dream Launcher focused on the features needed for a reliable old-Fortnite launcher on C# + WPF.
 
-Reference: https://github.com/retracmp/launcher2
-
-## Reference Signals
-
-The reference launcher has these durable product areas:
+## Product Areas
 
 - app shell with home, library, downloads, status, store/extra pages, leaderboard, and settings;
 - local library for installed Fortnite builds;
@@ -26,9 +22,9 @@ The reference launcher has these durable product areas:
 - [x] Exchange-code placeholders in build launch arguments.
 - [x] Import an existing build folder from the UI.
 - [x] Validate required executable paths before launch.
-- [ ] Track launch state: idle, launching, launched, closing.
+- [x] Track launch state: idle, launching, launched, closing.
 - [x] Close known Fortnite/Epic processes from the launcher.
-- [ ] Show cleaner launch errors that users can report.
+- [x] Show cleaner launch errors that users can report.
 
 ## Phase 2 - Real Status Surface
 

@@ -10,6 +10,7 @@ obj/
 config/builds.json
 settings.json
 discord-session.json
+dream-launcher-report-*.txt
 *.log
 
 # OS files

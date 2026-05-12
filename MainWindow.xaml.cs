@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -21,6 +23,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<string> _logs = [];
     private LauncherSettings _settings = LauncherSettings.Default;
     private DiscordSession? _discordSession;
+    private LaunchState _launchState = LaunchState.Idle;
 
     public MainWindow()
     {
@@ -30,6 +33,7 @@ public partial class MainWindow : Window
         ManifestPathTextBlock.Text = _buildManifestService.ManifestPath;
         SettingsPathTextBlock.Text = _settingsService.SettingsPath;
         SessionPathTextBlock.Text = _discordSessionService.SessionPath;
+        SetLaunchState(LaunchState.Idle);
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -82,7 +86,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AddLog($"Settings error: {ex.Message}");
+            AddError("Settings", ex);
         }
     }
 
@@ -102,7 +106,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AddLog($"Discord login error: {ex.Message}");
+            AddError("Discord login", ex);
         }
         finally
         {
@@ -143,7 +147,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AddLog($"Status error: {ex.Message}");
+            AddError("Status", ex);
         }
     }
 
@@ -155,7 +159,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AddLog($"Build manifest error: {ex.Message}");
+            AddError("Build manifest", ex);
         }
     }
 
@@ -182,7 +186,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AddLog($"Import build error: {ex.Message}");
+            AddError("Import build", ex);
         }
     }
 
@@ -205,7 +209,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            AddLog($"Open manifest error: {ex.Message}");
+            AddError("Open manifest", ex);
         }
     }
 
@@ -213,12 +217,15 @@ public partial class MainWindow : Window
     {
         try
         {
+            SetLaunchState(LaunchState.Closing);
             var closed = _launchService.CloseGameProcesses();
             AddLog(closed == 0 ? "No game processes were running." : $"Closed {closed} game process(es).");
+            SetLaunchState(LaunchState.Idle);
         }
         catch (Exception ex)
         {
-            AddLog($"Close game error: {ex.Message}");
+            SetLaunchState(LaunchState.Error);
+            AddError("Close game", ex);
         }
     }
 
@@ -238,6 +245,7 @@ public partial class MainWindow : Window
 
         try
         {
+            SetLaunchState(LaunchState.Launching);
             LaunchButton.IsEnabled = false;
             _settings = ReadSettingsFromInputs();
 
@@ -264,10 +272,12 @@ public partial class MainWindow : Window
 
             var executable = _launchService.Launch(build, context);
             AddLog($"Launched {executable}");
+            SetLaunchState(LaunchState.Launched);
         }
         catch (Exception ex)
         {
-            AddLog($"Launch error: {ex.Message}");
+            SetLaunchState(LaunchState.Error);
+            AddError("Launch", ex);
         }
         finally
         {
@@ -278,6 +288,33 @@ public partial class MainWindow : Window
     private void ClearLogs_Click(object sender, RoutedEventArgs e)
     {
         _logs.Clear();
+    }
+
+    private void ExportReport_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var dialog = new Forms.SaveFileDialog
+            {
+                AddExtension = true,
+                DefaultExt = "txt",
+                FileName = $"dream-launcher-report-{DateTime.Now:yyyyMMdd-HHmmss}.txt",
+                Filter = "Text report (*.txt)|*.txt|All files (*.*)|*.*",
+                Title = "Export launcher report"
+            };
+
+            if (dialog.ShowDialog() != Forms.DialogResult.OK)
+            {
+                return;
+            }
+
+            File.WriteAllText(dialog.FileName, BuildReport(), Encoding.UTF8);
+            AddLog($"Report exported: {dialog.FileName}");
+        }
+        catch (Exception ex)
+        {
+            AddError("Export report", ex);
+        }
     }
 
     private LauncherSettings ReadSettingsFromInputs()
@@ -314,12 +351,107 @@ public partial class MainWindow : Window
         LaunchButton.IsEnabled =
             BuildsListBox.SelectedItem is BuildDefinition &&
             _discordSession is not null &&
-            !_discordSession.IsExpired;
+            !_discordSession.IsExpired &&
+            _launchState is not LaunchState.Launching and not LaunchState.Closing;
     }
 
     private void AddLog(string message)
     {
         _logs.Insert(0, $"{DateTime.Now:HH:mm:ss}  {message}");
+    }
+
+    private void AddError(string area, Exception ex)
+    {
+        AddLog($"{area} error: {FriendlyError(ex)}");
+    }
+
+    private void SetLaunchState(LaunchState state)
+    {
+        _launchState = state;
+
+        var muted = (Brush)FindResource("MutedBrush");
+        var accent = (Brush)FindResource("AccentBrush");
+        var danger = (Brush)FindResource("DangerBrush");
+        var border = (Brush)FindResource("BorderBrushColor");
+
+        LaunchStatePill.BorderBrush = state switch
+        {
+            LaunchState.Launched => accent,
+            LaunchState.Error => danger,
+            LaunchState.Launching or LaunchState.Closing => accent,
+            _ => border
+        };
+
+        LaunchStateText.Foreground = state switch
+        {
+            LaunchState.Launched => accent,
+            LaunchState.Error => danger,
+            LaunchState.Launching or LaunchState.Closing => accent,
+            _ => muted
+        };
+
+        LaunchStateText.Text = state switch
+        {
+            LaunchState.Launching => "Launch: launching",
+            LaunchState.Launched => "Launch: launched",
+            LaunchState.Closing => "Launch: closing",
+            LaunchState.Error => "Launch: error",
+            _ => "Launch: idle"
+        };
+
+        UpdateLaunchButton();
+    }
+
+    private string BuildReport()
+    {
+        var selectedBuild = BuildsListBox.SelectedItem as BuildDefinition;
+        var report = new StringBuilder();
+
+        report.AppendLine("Dream Launcher Report");
+        report.AppendLine($"Created: {DateTimeOffset.Now:O}");
+        report.AppendLine($"Launch state: {_launchState}");
+        report.AppendLine($"Backend URL: {_settings.BackendUrl}");
+        report.AppendLine($"Game server: {_settings.GameServerHost}:{_settings.GameServerPort}");
+        report.AppendLine($"Discord signed in: {_discordSession is not null && !_discordSession.IsExpired}");
+
+        if (_discordSession is not null)
+        {
+            report.AppendLine($"Discord user: {_discordSession.User.DisplayName} ({_discordSession.User.Id})");
+            report.AppendLine($"Discord token expires: {_discordSession.ExpiresAtUtc:O}");
+        }
+
+        if (selectedBuild is not null)
+        {
+            report.AppendLine($"Selected build: {selectedBuild.Name}");
+            report.AppendLine($"Build path: {selectedBuild.Path}");
+            report.AppendLine($"Build executable: {selectedBuild.Executable}");
+        }
+
+        report.AppendLine();
+        report.AppendLine("Logs:");
+
+        foreach (var item in _logs.Reverse())
+        {
+            report.AppendLine(item);
+        }
+
+        return report.ToString();
+    }
+
+    private static string FriendlyError(Exception ex)
+    {
+        return ex switch
+        {
+            FileNotFoundException fileNotFound => $"Required file is missing: {fileNotFound.FileName}",
+            TimeoutException => "The operation timed out. Check Discord/backend connectivity and try again.",
+            HttpRequestException => "Network request failed. Check backend URL, internet connection, or service availability.",
+            InvalidOperationException invalid when invalid.Message.Contains("account_not_registered", StringComparison.OrdinalIgnoreCase) =>
+                "This Discord account is not registered in Dream backend.",
+            InvalidOperationException invalid when invalid.Message.Contains("Backend exchange failed", StringComparison.OrdinalIgnoreCase) =>
+                $"Backend refused exchange-code login. Details: {invalid.Message}",
+            InvalidOperationException invalid => invalid.Message,
+            _ => ex.Message
+        };
     }
 
     private void SetStatus(Border pill, TextBlock text, string label, ServiceCheckResult result)

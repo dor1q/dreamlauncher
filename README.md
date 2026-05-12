@@ -11,8 +11,10 @@ C# + WPF desktop launcher MVP for Dream.
 - Build picker.
 - Existing build folder import.
 - Close known Fortnite/Epic processes from the launcher.
+- Launch state indicator.
 - Selected executable launch after Discord login.
 - Dream backend exchange-code request before launch.
+- Exportable runtime report without saved tokens or secrets.
 - Runtime logs.
 
 The project does not include game files, proprietary assets, private keys, or credentials.
