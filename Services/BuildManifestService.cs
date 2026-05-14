@@ -77,6 +77,25 @@ public sealed class BuildManifestService
         return build;
     }
 
+    public async Task<bool> RemoveBuildAsync(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return false;
+        }
+
+        var manifest = await LoadAsync();
+        var removed = manifest.Builds.RemoveAll(build =>
+            string.Equals(build.Id, id, StringComparison.OrdinalIgnoreCase)) > 0;
+
+        if (removed)
+        {
+            await SaveAsync(manifest);
+        }
+
+        return removed;
+    }
+
     private static string ResolveAppRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);

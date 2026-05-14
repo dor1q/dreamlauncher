@@ -97,7 +97,7 @@ public sealed class LaunchService
         Process.Start(info);
     }
 
-    private static string ResolveExecutable(BuildDefinition build)
+    public static string ResolveExecutable(BuildDefinition build)
     {
         return Path.IsPathRooted(build.Executable)
             ? build.Executable

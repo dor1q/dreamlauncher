@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using DreamLauncher.Models;
 using DreamLauncher.Services;
 using Forms = System.Windows.Forms;
@@ -245,6 +246,44 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             AddError("Open manifest", ex);
+        }
+    }
+
+    private async void RemoveSelectedBuild_Click(object sender, RoutedEventArgs e)
+    {
+        if (BuildsListBox.SelectedItem is not BuildDefinition build)
+        {
+            AddLog("Remove skipped: select a build first.");
+            return;
+        }
+
+        var result = System.Windows.MessageBox.Show(
+            $"Remove {build.Name} from the launcher library? Game files will stay on disk.",
+            "Remove build",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            var removed = await _buildManifestService.RemoveBuildAsync(build.Id);
+
+            if (!removed)
+            {
+                AddLog("Remove skipped: build was not found in the manifest.");
+                return;
+            }
+
+            await LoadBuildsAsync();
+            AddLog($"Removed build from library: {build.Name}");
+        }
+        catch (Exception ex)
+        {
+            AddError("Remove build", ex);
         }
     }
 
@@ -542,6 +581,7 @@ public partial class MainWindow : Window
         HeaderUserText.Text = signedIn
             ? $"#{ShortDiscordId(_discordSession!.User.Id)} {displayName}"
             : "#00000 Guest";
+        UpdateHomeAvatar(signedIn);
 
         LoginDiscordButton.IsEnabled = !signedIn && !_discordLoginInProgress;
         AuthGateLoginButton.IsEnabled = !signedIn && !_discordLoginInProgress;
@@ -626,12 +666,14 @@ public partial class MainWindow : Window
             SelectedBuildText.Text = build.Name;
             HomeBuildText.Text = build.Name;
             DownloadsSelectedBuildText.Text = build.Name;
+            LibrarySelectedExecutableText.Text = $"Executable: {LaunchService.ResolveExecutable(build)}";
         }
         else
         {
             SelectedBuildText.Text = "No build selected";
             HomeBuildText.Text = "No build selected";
             DownloadsSelectedBuildText.Text = "No build selected";
+            LibrarySelectedExecutableText.Text = "Executable: no build selected";
         }
 
         DownloadsContentDirectoryText.Text = $"Content directory: {_settings.ContentDirectory}";
@@ -701,7 +743,7 @@ public partial class MainWindow : Window
         {
             report.AppendLine($"Selected build: {selectedBuild.Name}");
             report.AppendLine($"Build path: {selectedBuild.Path}");
-            report.AppendLine($"Build executable: {selectedBuild.Executable}");
+            report.AppendLine($"Build executable: {LaunchService.ResolveExecutable(selectedBuild)}");
         }
 
         report.AppendLine();
@@ -774,6 +816,83 @@ public partial class MainWindow : Window
     private static string ShortDiscordId(string id)
     {
         return id.Length <= 5 ? id : id[^5..];
+    }
+
+    private void UpdateHomeAvatar(bool signedIn)
+    {
+        if (!signedIn || _discordSession is null)
+        {
+            SetDefaultHomeAvatar();
+            return;
+        }
+
+        var avatarUrl = BuildDiscordAvatarUrl(_discordSession.User);
+
+        if (string.IsNullOrWhiteSpace(avatarUrl))
+        {
+            SetDefaultHomeAvatar();
+            return;
+        }
+
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            bitmap.UriSource = new Uri(avatarUrl, UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze();
+
+            HomeAvatarBorder.Background = new ImageBrush(bitmap)
+            {
+                Stretch = Stretch.UniformToFill
+            };
+            HomeAvatarFallbackText.Visibility = Visibility.Collapsed;
+        }
+        catch
+        {
+            SetDefaultHomeAvatar();
+        }
+    }
+
+    private void SetDefaultHomeAvatar()
+    {
+        HomeAvatarBorder.Background = new LinearGradientBrush(
+            MediaColor.FromRgb(34, 225, 255),
+            MediaColor.FromRgb(255, 76, 76),
+            45);
+        HomeAvatarFallbackText.Visibility = Visibility.Visible;
+    }
+
+    private static string? BuildDiscordAvatarUrl(DiscordUserProfile user)
+    {
+        if (string.IsNullOrWhiteSpace(user.Id))
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.Avatar))
+        {
+            return $"https://cdn.discordapp.com/avatars/{user.Id}/{user.Avatar}.png?size=128";
+        }
+
+        var index = GetDefaultDiscordAvatarIndex(user);
+        return $"https://cdn.discordapp.com/embed/avatars/{index}.png";
+    }
+
+    private static int GetDefaultDiscordAvatarIndex(DiscordUserProfile user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.Discriminator) &&
+            user.Discriminator != "0" &&
+            int.TryParse(user.Discriminator, out var discriminator))
+        {
+            return discriminator % 5;
+        }
+
+        return ulong.TryParse(user.Id, out var id)
+            ? (int)((id >> 22) % 6)
+            : 0;
     }
 
     private void AddStatusSummary(string label, ServiceCheckResult result)

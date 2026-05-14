@@ -9,7 +9,11 @@
         MinHeight="560"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        ResizeMode="CanResize"
+        ResizeMode="NoResize"
+        Background="#080D0F"
+        BorderThickness="0"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
         Loaded="Window_Loaded">
     <Border Background="{StaticResource ShellBrush}" BorderBrush="Transparent" BorderThickness="0" CornerRadius="0" Margin="0">
         <Grid>
@@ -96,14 +100,14 @@
                                     <ColumnDefinition Width="56" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Width="46" Height="46" CornerRadius="23">
+                                <Border x:Name="HomeAvatarBorder" Width="46" Height="46" CornerRadius="23" ClipToBounds="True">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                             <GradientStop Color="#22E1FF" Offset="0" />
                                             <GradientStop Color="#FF4C4C" Offset="1" />
                                         </LinearGradientBrush>
                                     </Border.Background>
-                                    <TextBlock Text="D" FontSize="24" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="HomeAvatarFallbackText" Text="D" FontSize="24" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="Welcome" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
@@ -208,19 +212,28 @@
 
                     <Grid x:Name="LibraryPage" Visibility="Collapsed">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="84" />
+                            <RowDefinition Height="124" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="34" />
+                            </Grid.RowDefinitions>
                             <StackPanel>
                                 <TextBlock Text="Library" FontSize="22" FontWeight="Black" />
                                 <TextBlock Text="Contains all local builds you have installed. Launch or close the game from here." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
                                 <Button Content="Find an existing version" Click="AddBuildFolder_Click" />
+                                <Button Content="Remove selected" Margin="8,0,0,0" Click="RemoveSelectedBuild_Click" />
                                 <Button Content="Open manifest" Margin="8,0,0,0" Click="OpenManifest_Click" />
                                 <Button Content="Close game" Margin="8,0,0,0" Click="CloseGame_Click" />
                             </StackPanel>
+                            <Border Grid.Row="2" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="9,6" Margin="0,8,0,0">
+                                <TextBlock x:Name="LibrarySelectedExecutableText" Text="Executable: no build selected" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            </Border>
                         </Grid>
 
                         <ListBox x:Name="BuildsListBox" Grid.Row="1" SelectionChanged="BuildsListBox_SelectionChanged">
