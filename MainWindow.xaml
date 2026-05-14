@@ -482,6 +482,31 @@
                     <Button x:Name="LaunchButton" Content="LAUNCH DREAM" Style="{StaticResource PrimaryButton}" Height="38" Click="Launch_Click" IsEnabled="False" />
                 </Border>
             </Grid>
+
+            <Grid x:Name="AuthGateOverlay" Grid.ColumnSpan="2" Panel.ZIndex="50" Visibility="Collapsed" Background="#D9080D0F">
+                <Border Width="430" Background="#151817" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="6" Padding="22" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="DREAM" Foreground="{StaticResource AccentBrush}" FontSize="12" FontWeight="Black" />
+                        <TextBlock Text="Login Required" FontSize="28" FontWeight="Black" Margin="0,2,0,4" />
+                        <TextBlock Text="Sign in with Discord before using the launcher." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,18" />
+
+                        <TextBlock Text="Backend URL" FontWeight="Bold" />
+                        <TextBox x:Name="AuthBackendUrlTextBox" Margin="0,5,0,10" />
+
+                        <TextBlock Text="Callback port" FontWeight="Bold" />
+                        <TextBox x:Name="AuthDiscordRedirectPortTextBox" Margin="0,5,0,14" Width="130" HorizontalAlignment="Left" />
+
+                        <Border x:Name="AuthGateStatusPill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="12" Padding="9,5" Margin="0,0,0,14">
+                            <TextBlock x:Name="AuthGateStatusTextBlock" Text="Discord: signed out" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="AuthGateLoginButton" Content="Login with Discord" Style="{StaticResource PrimaryButton}" Width="184" Click="AuthGateLogin_Click" />
+                            <Button Content="Close" Width="86" Margin="8,0,0,0" Click="CloseWindow_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Grid>
     </Border>
 </Window>

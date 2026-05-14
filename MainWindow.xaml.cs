@@ -33,6 +33,8 @@ public partial class MainWindow : Window
     private DiscordSession? _discordSession;
     private LaunchState _launchState = LaunchState.Idle;
     private string _activePage = "Home";
+    private bool _discordLoginInProgress;
+    private string? _authGateMessage;
 
     public MainWindow()
     {
@@ -63,6 +65,8 @@ public partial class MainWindow : Window
         GameServerHostTextBox.Text = _settings.GameServerHost;
         GameServerPortTextBox.Text = _settings.GameServerPort.ToString();
         DiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
+        AuthBackendUrlTextBox.Text = _settings.BackendUrl;
+        AuthDiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
         ContentDirectoryTextBox.Text = _settings.ContentDirectory;
         AutoDownloadCheckBox.IsChecked = _settings.AutoDownload;
         DetailedDownloadsCheckBox.IsChecked = _settings.DetailedDownloads;
@@ -96,6 +100,7 @@ public partial class MainWindow : Window
         {
             _settings = ReadSettingsFromInputs();
             await _settingsService.SaveAsync(_settings);
+            SyncSettingsInputsToAuthGate();
             UpdateBuildSummary();
             AddLog("Settings saved.");
         }
@@ -107,24 +112,42 @@ public partial class MainWindow : Window
 
     private async void LoginDiscord_Click(object sender, RoutedEventArgs e)
     {
+        await LoginDiscordAsync(syncFromAuthGate: false);
+    }
+
+    private async void AuthGateLogin_Click(object sender, RoutedEventArgs e)
+    {
+        await LoginDiscordAsync(syncFromAuthGate: true);
+    }
+
+    private async Task LoginDiscordAsync(bool syncFromAuthGate)
+    {
         try
         {
+            if (syncFromAuthGate)
+            {
+                SyncAuthGateInputsToSettingsInputs();
+            }
+
             _settings = ReadSettingsFromInputs();
             await _settingsService.SaveAsync(_settings);
 
-            LoginDiscordButton.IsEnabled = false;
+            SetDiscordLoginBusy(true, "Opening Discord login in your browser.");
             AddLog("Opening Discord login.");
 
             _discordSession = await _discordAuthService.SignInAsync(_settings);
             await _discordSessionService.SaveAsync(_discordSession);
+            _authGateMessage = $"Signed in as {_discordSession.User.DisplayName}.";
             AddLog($"Signed in as {_discordSession.User.DisplayName}.");
         }
         catch (Exception ex)
         {
+            _authGateMessage = FriendlyError(ex);
             AddError("Discord login", ex);
         }
         finally
         {
+            SetDiscordLoginBusy(false);
             UpdateDiscordAuthUi();
         }
     }
@@ -133,6 +156,7 @@ public partial class MainWindow : Window
     {
         await _discordSessionService.ClearAsync();
         _discordSession = null;
+        _authGateMessage = "Discord: signed out";
         UpdateDiscordAuthUi();
         AddLog("Signed out of Discord.");
     }
@@ -424,6 +448,33 @@ public partial class MainWindow : Window
             DetailedDownloadsCheckBox.IsChecked == true);
     }
 
+    private void SyncAuthGateInputsToSettingsInputs()
+    {
+        BackendUrlTextBox.Text = AuthBackendUrlTextBox.Text;
+        DiscordRedirectPortTextBox.Text = AuthDiscordRedirectPortTextBox.Text;
+    }
+
+    private void SyncSettingsInputsToAuthGate()
+    {
+        AuthBackendUrlTextBox.Text = _settings.BackendUrl;
+        AuthDiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
+    }
+
+    private void SetDiscordLoginBusy(bool busy, string? message = null)
+    {
+        _discordLoginInProgress = busy;
+
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            _authGateMessage = message;
+        }
+
+        LoginDiscordButton.IsEnabled = !busy;
+        AuthGateLoginButton.IsEnabled = !busy;
+        AuthGateLoginButton.Content = busy ? "Waiting for Discord" : "Login with Discord";
+        AuthGateStatusTextBlock.Text = _authGateMessage ?? "Discord: signed out";
+    }
+
     private void Nav_Click(object sender, RoutedEventArgs e)
     {
         if (sender is WpfButton { Tag: string page })
@@ -499,6 +550,12 @@ public partial class MainWindow : Window
         DiscordAuthTextBlock.Text = signedIn
             ? $"Discord: {_discordSession!.User.DisplayName}"
             : "Discord: signed out";
+        AuthGateOverlay.Visibility = signedIn ? Visibility.Collapsed : Visibility.Visible;
+        AuthGateStatusPill.BorderBrush = signedIn ? accent : border;
+        AuthGateStatusTextBlock.Foreground = signedIn ? accent : muted;
+        AuthGateStatusTextBlock.Text = signedIn
+            ? $"Discord: {_discordSession!.User.DisplayName}"
+            : _authGateMessage ?? "Discord: signed out";
 
         var displayName = signedIn ? _discordSession!.User.DisplayName : "Guest";
         WelcomeNameText.Text = displayName;
@@ -506,7 +563,9 @@ public partial class MainWindow : Window
             ? $"#{ShortDiscordId(_discordSession!.User.Id)} {displayName}"
             : "#00000 Guest";
 
-        LoginDiscordButton.IsEnabled = !signedIn;
+        LoginDiscordButton.IsEnabled = !signedIn && !_discordLoginInProgress;
+        AuthGateLoginButton.IsEnabled = !signedIn && !_discordLoginInProgress;
+        AuthGateLoginButton.Content = _discordLoginInProgress ? "Waiting for Discord" : "Login with Discord";
         LogoutDiscordButton.IsEnabled = signedIn;
         UpdateLaunchButton();
     }

@@ -7,7 +7,7 @@ Dream Launcher is a C# + WPF desktop launcher for the Dream project. It is focus
 | Area | State |
 | --- | --- |
 | Desktop shell | WPF app on .NET 8 with game-style left navigation |
-| Authentication | Browser Discord OAuth started and completed through the Dream backend |
+| Authentication | Startup login gate with browser Discord OAuth through the Dream backend |
 | Backend identity | Dream launcher session exchange through the Dream backend |
 | Backend status | Reads `/launcher/api/status` and logs service-level health |
 | Local library | Build manifest, existing folder import, and build verification |
