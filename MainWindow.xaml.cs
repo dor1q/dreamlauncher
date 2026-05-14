@@ -18,6 +18,11 @@ namespace DreamLauncher;
 
 public partial class MainWindow : Window
 {
+    private static readonly HttpClient AvatarHttp = new()
+    {
+        Timeout = TimeSpan.FromSeconds(12)
+    };
+
     private readonly SettingsService _settingsService = new();
     private readonly BuildManifestService _buildManifestService = new();
     private readonly BuildVerificationService _buildVerificationService = new();
@@ -36,6 +41,7 @@ public partial class MainWindow : Window
     private string _activePage = "Home";
     private bool _discordLoginInProgress;
     private string? _authGateMessage;
+    private int _avatarRequestVersion;
 
     public MainWindow()
     {
@@ -222,6 +228,34 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             AddError("Import build", ex);
+        }
+    }
+
+    private async void AddBuildExecutable_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var dialog = new Forms.OpenFileDialog
+            {
+                AddExtension = true,
+                CheckFileExists = true,
+                Filter = "Fortnite executable (FortniteClient-Win64-Shipping.exe)|FortniteClient-Win64-Shipping.exe|Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+                Title = "Select FortniteClient-Win64-Shipping.exe"
+            };
+
+            if (dialog.ShowDialog() != Forms.DialogResult.OK)
+            {
+                return;
+            }
+
+            var build = await _buildManifestService.AddExistingBuildExecutableAsync(dialog.FileName);
+            await LoadBuildsAsync();
+            BuildsListBox.SelectedItem = _builds.FirstOrDefault(item => item.Id == build.Id);
+            AddLog($"Imported build executable: {build.ResolvedExecutable}");
+        }
+        catch (Exception ex)
+        {
+            AddError("Import executable", ex);
         }
     }
 
@@ -666,14 +700,18 @@ public partial class MainWindow : Window
             SelectedBuildText.Text = build.Name;
             HomeBuildText.Text = build.Name;
             DownloadsSelectedBuildText.Text = build.Name;
-            LibrarySelectedExecutableText.Text = $"Executable: {LaunchService.ResolveExecutable(build)}";
+            LibrarySelectedBuildNameText.Text = $"Selected build: {build.Name}";
+            LibrarySelectedExecutableText.Text = $"Executable: {build.ResolvedExecutable}";
+            LibrarySelectedPathText.Text = $"Folder: {build.Path}";
         }
         else
         {
             SelectedBuildText.Text = "No build selected";
             HomeBuildText.Text = "No build selected";
             DownloadsSelectedBuildText.Text = "No build selected";
+            LibrarySelectedBuildNameText.Text = "Selected build: none";
             LibrarySelectedExecutableText.Text = "Executable: no build selected";
+            LibrarySelectedPathText.Text = "Folder: no build selected";
         }
 
         DownloadsContentDirectoryText.Text = $"Content directory: {_settings.ContentDirectory}";
@@ -818,11 +856,16 @@ public partial class MainWindow : Window
         return id.Length <= 5 ? id : id[^5..];
     }
 
-    private void UpdateHomeAvatar(bool signedIn)
+    private async void UpdateHomeAvatar(bool signedIn)
     {
+        var requestVersion = ++_avatarRequestVersion;
+        var displayName = signedIn && _discordSession is not null
+            ? _discordSession.User.DisplayName
+            : "Dream";
+
         if (!signedIn || _discordSession is null)
         {
-            SetDefaultHomeAvatar();
+            SetDefaultHomeAvatar(displayName);
             return;
         }
 
@@ -830,21 +873,35 @@ public partial class MainWindow : Window
 
         if (string.IsNullOrWhiteSpace(avatarUrl))
         {
-            SetDefaultHomeAvatar();
+            SetDefaultHomeAvatar(displayName);
             return;
         }
 
         try
         {
+            SetDefaultHomeAvatar(displayName);
+            using var request = new HttpRequestMessage(HttpMethod.Get, avatarUrl);
+            request.Headers.UserAgent.ParseAdd("DreamLauncher/0.1");
+
+            using var response = await AvatarHttp.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+
+            await using var stream = new MemoryStream(bytes);
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-            bitmap.UriSource = new Uri(avatarUrl, UriKind.Absolute);
+            bitmap.StreamSource = stream;
             bitmap.EndInit();
             bitmap.Freeze();
 
-            HomeAvatarBorder.Background = new ImageBrush(bitmap)
+            if (requestVersion != _avatarRequestVersion)
+            {
+                return;
+            }
+
+            HomeAvatarEllipse.Fill = new ImageBrush(bitmap)
             {
                 Stretch = Stretch.UniformToFill
             };
@@ -852,16 +909,20 @@ public partial class MainWindow : Window
         }
         catch
         {
-            SetDefaultHomeAvatar();
+            if (requestVersion == _avatarRequestVersion)
+            {
+                SetDefaultHomeAvatar(displayName);
+            }
         }
     }
 
-    private void SetDefaultHomeAvatar()
+    private void SetDefaultHomeAvatar(string displayName)
     {
-        HomeAvatarBorder.Background = new LinearGradientBrush(
+        HomeAvatarEllipse.Fill = new LinearGradientBrush(
             MediaColor.FromRgb(34, 225, 255),
             MediaColor.FromRgb(255, 76, 76),
             45);
+        HomeAvatarFallbackText.Text = GetAvatarInitial(displayName);
         HomeAvatarFallbackText.Visibility = Visibility.Visible;
     }
 
@@ -893,6 +954,14 @@ public partial class MainWindow : Window
         return ulong.TryParse(user.Id, out var id)
             ? (int)((id >> 22) % 6)
             : 0;
+    }
+
+    private static string GetAvatarInitial(string displayName)
+    {
+        var trimmed = displayName.Trim();
+        return string.IsNullOrWhiteSpace(trimmed)
+            ? "D"
+            : trimmed[..1].ToUpperInvariant();
     }
 
     private void AddStatusSummary(string label, ServiceCheckResult result)

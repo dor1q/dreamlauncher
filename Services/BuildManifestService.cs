@@ -77,6 +77,42 @@ public sealed class BuildManifestService
         return build;
     }
 
+    public async Task<BuildDefinition> AddExistingBuildExecutableAsync(string executablePath)
+    {
+        if (string.IsNullOrWhiteSpace(executablePath))
+        {
+            throw new InvalidOperationException("Build executable is required.");
+        }
+
+        var fullExecutable = Path.GetFullPath(executablePath);
+
+        if (!File.Exists(fullExecutable))
+        {
+            throw new FileNotFoundException("Build executable was not found.", fullExecutable);
+        }
+
+        var fullRoot = ResolveBuildRootFromExecutable(fullExecutable);
+        var relativeExecutable = Path.GetRelativePath(fullRoot, fullExecutable);
+        var folderName = new DirectoryInfo(fullRoot).Name;
+        var build = new BuildDefinition
+        {
+            Id = CreateBuildId(folderName),
+            Name = string.IsNullOrWhiteSpace(folderName) ? Path.GetFileNameWithoutExtension(fullExecutable) : folderName,
+            Path = fullRoot,
+            Executable = relativeExecutable,
+            Arguments = BuildDefinition.DefaultArguments()
+        };
+
+        var manifest = await LoadAsync();
+        manifest.Builds.RemoveAll(item =>
+            string.Equals(item.ResolvedExecutable, fullExecutable, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Path.GetFullPath(item.Path), fullRoot, StringComparison.OrdinalIgnoreCase));
+        manifest.Builds.Add(build);
+
+        await SaveAsync(manifest);
+        return build;
+    }
+
     public async Task<bool> RemoveBuildAsync(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -127,5 +163,29 @@ public sealed class BuildManifestService
         }
 
         return $"{cleaned}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
+    }
+
+    private static string ResolveBuildRootFromExecutable(string executablePath)
+    {
+        var defaultExecutable = BuildDefinition.DefaultExecutable
+            .Replace('\\', Path.DirectorySeparatorChar)
+            .Replace('/', Path.DirectorySeparatorChar);
+        var normalizedExecutable = executablePath
+            .Replace('\\', Path.DirectorySeparatorChar)
+            .Replace('/', Path.DirectorySeparatorChar);
+
+        if (normalizedExecutable.EndsWith(defaultExecutable, StringComparison.OrdinalIgnoreCase))
+        {
+            var root = normalizedExecutable[..^defaultExecutable.Length]
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            if (!string.IsNullOrWhiteSpace(root))
+            {
+                return root;
+            }
+        }
+
+        return Path.GetDirectoryName(executablePath)
+            ?? throw new InvalidOperationException("Executable directory could not be resolved.");
     }
 }

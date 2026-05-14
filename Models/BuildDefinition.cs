@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.IO;
 
 namespace DreamLauncher.Models;
 
@@ -16,6 +17,15 @@ public sealed class BuildDefinition
     [JsonIgnore]
     public bool UsesExchangeCode =>
         Arguments.Any(argument => argument.Contains("{exchangeCode}", StringComparison.OrdinalIgnoreCase));
+
+    [JsonIgnore]
+    public string ResolvedExecutable =>
+        System.IO.Path.IsPathRooted(Executable)
+            ? Executable
+            : System.IO.Path.GetFullPath(System.IO.Path.Combine(Path, Executable));
+
+    [JsonIgnore]
+    public string ExecutableFileName => System.IO.Path.GetFileName(ResolvedExecutable);
 
     public bool IsValid =>
         !string.IsNullOrWhiteSpace(Id) &&

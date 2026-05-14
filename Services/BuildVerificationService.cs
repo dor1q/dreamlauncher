@@ -72,8 +72,6 @@ public sealed class BuildVerificationService
 
     private static string ResolveExecutable(BuildDefinition build)
     {
-        return Path.IsPathRooted(build.Executable)
-            ? build.Executable
-            : Path.GetFullPath(Path.Combine(build.Path, build.Executable));
+        return build.ResolvedExecutable;
     }
 }

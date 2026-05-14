@@ -99,9 +99,7 @@ public sealed class LaunchService
 
     public static string ResolveExecutable(BuildDefinition build)
     {
-        return Path.IsPathRooted(build.Executable)
-            ? build.Executable
-            : Path.GetFullPath(Path.Combine(build.Path, build.Executable));
+        return build.ResolvedExecutable;
     }
 
     private static IEnumerable<string> ResolveArguments(BuildDefinition build, LaunchContext context)
