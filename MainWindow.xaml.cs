@@ -4,11 +4,14 @@ using System.Net.Http;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using DreamLauncher.Models;
 using DreamLauncher.Services;
 using Forms = System.Windows.Forms;
+using WpfButton = System.Windows.Controls.Button;
 using MediaBrush = System.Windows.Media.Brush;
+using MediaColor = System.Windows.Media.Color;
 
 namespace DreamLauncher;
 
@@ -26,6 +29,7 @@ public partial class MainWindow : Window
     private LauncherSettings _settings = LauncherSettings.Default;
     private DiscordSession? _discordSession;
     private LaunchState _launchState = LaunchState.Idle;
+    private string _activePage = "Home";
 
     public MainWindow()
     {
@@ -36,6 +40,7 @@ public partial class MainWindow : Window
         SettingsPathTextBlock.Text = _settingsService.SettingsPath;
         SessionPathTextBlock.Text = _discordSessionService.SessionPath;
         SetLaunchState(LaunchState.Idle);
+        ShowPage("Home");
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -75,6 +80,7 @@ public partial class MainWindow : Window
 
         BuildsListBox.SelectedIndex = _builds.Count > 0 ? 0 : -1;
         UpdateLaunchButton();
+        UpdateBuildSummary();
         AddLog($"Loaded {_builds.Count} build(s).");
     }
 
@@ -145,6 +151,7 @@ public partial class MainWindow : Window
 
             SetStatus(BackendStatusPill, BackendStatusText, "Backend", backendTask.Result);
             SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", gameServerTask.Result);
+            UpdateHomeStatusSummary(backendTask.Result, gameServerTask.Result);
             AddStatusSummary("Backend services", backendTask.Result);
             AddLog("Status checked.");
         }
@@ -196,6 +203,7 @@ public partial class MainWindow : Window
     private void BuildsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateLaunchButton();
+        UpdateBuildSummary();
 
         if (BuildsListBox.SelectedItem is BuildDefinition build)
         {
@@ -331,6 +339,67 @@ public partial class MainWindow : Window
             DiscordRedirectPortTextBox.Text);
     }
 
+    private void Nav_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is WpfButton { Tag: string page })
+        {
+            ShowPage(page);
+        }
+    }
+
+    private void Donate_Click(object sender, RoutedEventArgs e)
+    {
+        AddLog("Donate page is not connected yet.");
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void CloseWindow_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void WindowChrome_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    private void ShowPage(string page)
+    {
+        _activePage = page;
+
+        HomePage.Visibility = page == "Home" ? Visibility.Visible : Visibility.Collapsed;
+        LeaderboardPage.Visibility = page == "Leaderboard" ? Visibility.Visible : Visibility.Collapsed;
+        LibraryPage.Visibility = page == "Library" ? Visibility.Visible : Visibility.Collapsed;
+        StatusPage.Visibility = page == "Status" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPage.Visibility = page == "Settings" ? Visibility.Visible : Visibility.Collapsed;
+
+        SetNavButton(HomeNavButton, page == "Home");
+        SetNavButton(LeaderboardNavButton, page == "Leaderboard");
+        SetNavButton(LibraryNavButton, page == "Library");
+        SetNavButton(StatusNavButton, page == "Status");
+        SetNavButton(SettingsNavButton, page == "Settings");
+    }
+
+    private void SetNavButton(WpfButton button, bool active)
+    {
+        button.Background = active
+            ? (MediaBrush)FindResource("PanelStrongBrush")
+            : new SolidColorBrush(MediaColor.FromRgb(17, 23, 19));
+        button.BorderBrush = active
+            ? (MediaBrush)FindResource("BorderBrushColor")
+            : button.Background;
+        button.Foreground = active
+            ? (MediaBrush)FindResource("TextBrush")
+            : (MediaBrush)FindResource("MutedBrush");
+    }
+
     private void UpdateDiscordAuthUi()
     {
         var signedIn = _discordSession is not null && !_discordSession.IsExpired;
@@ -344,6 +413,12 @@ public partial class MainWindow : Window
             ? $"Discord: {_discordSession!.User.DisplayName}"
             : "Discord: signed out";
 
+        var displayName = signedIn ? _discordSession!.User.DisplayName : "Guest";
+        WelcomeNameText.Text = displayName;
+        HeaderUserText.Text = signedIn
+            ? $"#{ShortDiscordId(_discordSession!.User.Id)} {displayName}"
+            : "#00000 Guest";
+
         LoginDiscordButton.IsEnabled = !signedIn;
         LogoutDiscordButton.IsEnabled = signedIn;
         UpdateLaunchButton();
@@ -351,11 +426,22 @@ public partial class MainWindow : Window
 
     private void UpdateLaunchButton()
     {
-        LaunchButton.IsEnabled =
+        var canLaunch =
             BuildsListBox.SelectedItem is BuildDefinition &&
             _discordSession is not null &&
             !_discordSession.IsExpired &&
             _launchState is not LaunchState.Launching and not LaunchState.Closing;
+
+        LaunchButton.IsEnabled = canLaunch;
+        LaunchButton.Content = _launchState switch
+        {
+            LaunchState.Launching => "LAUNCHING DREAM",
+            LaunchState.Launched => "DREAM IS RUNNING",
+            LaunchState.Closing => "CLOSING GAME",
+            _ when _discordSession is null || _discordSession.IsExpired => "LOGIN WITH DISCORD TO LAUNCH",
+            _ when BuildsListBox.SelectedItem is not BuildDefinition => "SELECT A BUILD TO LAUNCH",
+            _ => "LAUNCH DREAM"
+        };
     }
 
     private void AddLog(string message)
@@ -403,6 +489,32 @@ public partial class MainWindow : Window
         };
 
         UpdateLaunchButton();
+    }
+
+    private void UpdateBuildSummary()
+    {
+        BuildCountText.Text = _builds.Count == 1 ? "1 build installed" : $"{_builds.Count} builds installed";
+
+        if (BuildsListBox.SelectedItem is BuildDefinition build)
+        {
+            SelectedBuildText.Text = build.Name;
+            HomeBuildText.Text = build.Name;
+        }
+        else
+        {
+            SelectedBuildText.Text = "No build selected";
+            HomeBuildText.Text = "No build selected";
+        }
+    }
+
+    private void UpdateHomeStatusSummary(ServiceCheckResult backend, ServiceCheckResult gameServer)
+    {
+        HomeStatusTitleText.Text = backend.State == ServiceState.Online
+            ? "Backend services are online"
+            : "Backend needs attention";
+        HomeStatusSubtitleText.Text = gameServer.State == ServiceState.Online
+            ? "Game server is reachable. You can launch when account and build are ready."
+            : "Backend status was checked. Game server is still offline or not started.";
     }
 
     private string BuildReport()
@@ -489,6 +601,11 @@ public partial class MainWindow : Window
     private static string FormatStatusCode(ServiceCheckResult result)
     {
         return result.StatusCode is null ? string.Empty : $", HTTP {result.StatusCode}";
+    }
+
+    private static string ShortDiscordId(string id)
+    {
+        return id.Length <= 5 ? id : id[^5..];
     }
 
     private void AddStatusSummary(string label, ServiceCheckResult result)

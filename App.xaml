@@ -3,15 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="WindowBrush" Color="#0B1020" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#121A2D" />
-        <SolidColorBrush x:Key="PanelStrongBrush" Color="#18233A" />
-        <SolidColorBrush x:Key="BorderBrushColor" Color="#2B3853" />
-        <SolidColorBrush x:Key="TextBrush" Color="#EDF2FF" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#97A4BB" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#57C78B" />
-        <SolidColorBrush x:Key="AccentStrongBrush" Color="#33A56A" />
-        <SolidColorBrush x:Key="DangerBrush" Color="#FF6B6B" />
+        <SolidColorBrush x:Key="WindowBrush" Color="#080D0F" />
+        <SolidColorBrush x:Key="ShellBrush" Color="#121513" />
+        <SolidColorBrush x:Key="SidebarBrush" Color="#0E1510" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#151817" />
+        <SolidColorBrush x:Key="PanelStrongBrush" Color="#1B201D" />
+        <SolidColorBrush x:Key="BorderBrushColor" Color="#2A302D" />
+        <SolidColorBrush x:Key="TextBrush" Color="#F0F3F1" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#8D9490" />
+        <SolidColorBrush x:Key="DimBrush" Color="#59615D" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#20D64A" />
+        <SolidColorBrush x:Key="AccentStrongBrush" Color="#16B935" />
+        <SolidColorBrush x:Key="BlueBrush" Color="#4B7DFF" />
+        <SolidColorBrush x:Key="YellowBrush" Color="#FFCB13" />
+        <SolidColorBrush x:Key="DangerBrush" Color="#FF5042" />
 
         <Style TargetType="Window">
             <Setter Property="Background" Value="{StaticResource WindowBrush}" />
@@ -20,14 +25,49 @@
             <Setter Property="FontSize" Value="13" />
         </Style>
 
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+
         <Style x:Key="BaseButton" TargetType="Button">
-            <Setter Property="MinHeight" Value="38" />
-            <Setter Property="Padding" Value="14,0" />
-            <Setter Property="Background" Value="#1A2438" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Background" Value="#1A1E1B" />
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrushColor}" />
             <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#222821" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#3C4640" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#0F130F" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="Button" BasedOn="{StaticResource BaseButton}" />
@@ -35,23 +75,48 @@
         <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BaseButton}">
             <Setter Property="Background" Value="{StaticResource AccentStrongBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource AccentStrongBrush}" />
-            <Setter Property="Foreground" Value="#07130D" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#F8FFF9" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+
+        <Style x:Key="NavButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="Background" Value="#111713" />
+            <Setter Property="BorderBrush" Value="#111713" />
+        </Style>
+
+        <Style x:Key="DonateButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButton}">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#FFE318" Offset="0" />
+                        <GradientStop Color="#FF3434" Offset="1" />
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#00000000" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontWeight" Value="Bold" />
         </Style>
 
         <Style TargetType="TextBox">
-            <Setter Property="MinHeight" Value="38" />
-            <Setter Property="Padding" Value="10,8" />
-            <Setter Property="Background" Value="#0D1425" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="9,6" />
+            <Setter Property="Background" Value="#101311" />
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrushColor}" />
             <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
         </Style>
 
         <Style TargetType="PasswordBox">
-            <Setter Property="MinHeight" Value="38" />
-            <Setter Property="Padding" Value="10,8" />
-            <Setter Property="Background" Value="#0D1425" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="9,6" />
+            <Setter Property="Background" Value="#101311" />
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrushColor}" />
             <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
@@ -61,6 +126,26 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                        <Border x:Name="ItemChrome" Background="Transparent" CornerRadius="5">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemChrome" Property="Background" Value="#252D23" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Application.Resources>
 </Application>

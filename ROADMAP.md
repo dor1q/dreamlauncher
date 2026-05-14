@@ -15,7 +15,7 @@ This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: a
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| WPF app foundation | Done | .NET 8 WPF shell, settings, services, local runtime files |
+| WPF app foundation | Done | .NET 8 WPF shell, left navigation, settings, services, local runtime files |
 | Discord authorization | Done | Browser OAuth callback through local loopback listener |
 | Dream backend identity | Done | Launcher requests a backend exchange code before game start |
 | Local build library | Active | Existing folder import is ready; remote manifests are next |
@@ -43,6 +43,7 @@ Goal: make the repository easy to clone, build, run, and continue.
 - [x] Roadmap split into clear implementation phases.
 - [x] Local setup checklist documented.
 - [x] Build verified with .NET 8 SDK.
+- [x] Game-style shell with Home, Leaderboards, Library, Status, and Settings pages.
 - [ ] Add CI build after final toolchain paths are stable.
 
 ## Phase 1 - Authentication And Launch Foundation

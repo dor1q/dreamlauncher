@@ -3,201 +3,381 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="clr-namespace:DreamLauncher.Models"
         Title="Dream Launcher"
-        Width="1180"
-        Height="760"
-        MinWidth="920"
-        MinHeight="620"
+        Width="840"
+        Height="640"
+        MinWidth="780"
+        MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         Loaded="Window_Loaded">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="92" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <Border Grid.Row="0" Background="#0E1526" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,0,1" Padding="30,20">
-            <Grid>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="DREAM" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                    <TextBlock Text="Launcher" FontSize="34" FontWeight="Bold" />
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Border x:Name="LaunchStatePill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="16" Padding="12,8" Margin="0,0,10,0" Width="190">
-                        <TextBlock x:Name="LaunchStateText" Text="Launch: idle" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
-                    </Border>
-                    <Border x:Name="BackendStatusPill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="16" Padding="12,8" Margin="0,0,10,0" Width="240">
-                        <TextBlock x:Name="BackendStatusText" Text="Backend: not checked" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
-                    </Border>
-                    <Border x:Name="GameServerStatusPill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="16" Padding="12,8" Width="240">
-                        <TextBlock x:Name="GameServerStatusText" Text="Game server: not checked" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
-                    </Border>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <Grid Grid.Row="1" Margin="16">
+    <Border Background="{StaticResource ShellBrush}" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="6" Margin="6">
+        <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.35*" MinWidth="520" />
-                <ColumnDefinition Width="16" />
-                <ColumnDefinition Width="0.85*" MinWidth="320" />
+                <ColumnDefinition Width="178" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" MinHeight="350" />
-                <RowDefinition Height="16" />
-                <RowDefinition Height="190" />
-            </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Grid.Column="0" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="8">
-                <Grid>
+            <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,1,0" CornerRadius="6,0,0,6">
+                <Grid Margin="12">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="72" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="72" />
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,0,1" Padding="18">
-                        <Grid>
-                            <StackPanel>
-                                <TextBlock Text="LOCAL BUILDS" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                                <TextBlock Text="Choose build" FontSize="20" FontWeight="SemiBold" />
-                            </StackPanel>
-                            <Button Content="Refresh" HorizontalAlignment="Right" Click="RefreshBuilds_Click" />
-                        </Grid>
-                    </Border>
-
-                    <ListBox x:Name="BuildsListBox" Grid.Row="1" Margin="16" SelectionChanged="BuildsListBox_SelectionChanged">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type models:BuildDefinition}">
-                                <Border BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,10" Background="#10182A">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="Bold" />
-                                            <TextBlock Text="{Binding Path}" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Text="{Binding Executable}" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                        <Border Grid.Column="1" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="12" Padding="8,4" VerticalAlignment="Top" Margin="12,0,0,0">
-                                            <TextBlock Text="{Binding Id}" Foreground="{StaticResource MutedBrush}" FontSize="12" />
-                                        </Border>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,1,0,0" Padding="16">
-                        <StackPanel Orientation="Horizontal">
-                            <Button x:Name="LaunchButton" Content="Launch" Style="{StaticResource PrimaryButton}" Width="140" Click="Launch_Click" IsEnabled="False" />
-                            <Button Content="Add folder" Margin="10,0,0,0" Click="AddBuildFolder_Click" />
-                            <Button Content="Open manifest" Margin="10,0,0,0" Click="OpenManifest_Click" />
-                            <Button Content="Close game" Margin="10,0,0,0" Click="CloseGame_Click" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </Border>
-
-            <Border Grid.Row="0" Grid.Column="2" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="8">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="72" />
+                        <RowDefinition Height="76" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,0,1" Padding="18">
-                        <Grid>
-                            <StackPanel>
-                                <TextBlock Text="ACCOUNT" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                                <TextBlock Text="Discord login" FontSize="20" FontWeight="SemiBold" />
-                            </StackPanel>
-                            <Button Content="Check" HorizontalAlignment="Right" Click="CheckStatus_Click" />
-                        </Grid>
-                    </Border>
-
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="16">
-                            <Border x:Name="DiscordAuthPill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="16" Padding="12,8" Margin="0,0,0,14">
-                                <TextBlock x:Name="DiscordAuthTextBlock" Text="Discord: signed out" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
-                            </Border>
-
-                            <TextBlock Text="Discord client id" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                            <TextBox x:Name="DiscordClientIdTextBox" Margin="0,7,0,14" />
-
-                            <TextBlock Text="Discord client secret" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                            <PasswordBox x:Name="DiscordClientSecretPasswordBox" Margin="0,7,0,14" />
-
-                            <TextBlock Text="Callback port" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                            <TextBox x:Name="DiscordRedirectPortTextBox" Margin="0,7,0,14" />
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-                                <Button x:Name="LoginDiscordButton" Content="Login with Discord" Style="{StaticResource PrimaryButton}" Width="170" Click="LoginDiscord_Click" />
-                                <Button x:Name="LogoutDiscordButton" Content="Logout" Margin="10,0,0,0" Width="90" Click="LogoutDiscord_Click" IsEnabled="False" />
-                            </StackPanel>
-
-                            <Border BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,1,0,0" Margin="0,0,0,16" />
-
-                            <TextBlock Text="Backend URL" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                            <TextBox x:Name="BackendUrlTextBox" Margin="0,7,0,14" />
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="12" />
-                                    <ColumnDefinition Width="112" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Game server host" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                                    <TextBox x:Name="GameServerHostTextBox" Margin="0,7,0,0" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Port" Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
-                                    <TextBox x:Name="GameServerPortTextBox" Margin="0,7,0,0" />
-                                </StackPanel>
-                            </Grid>
-
-                            <Button Content="Save settings" Style="{StaticResource PrimaryButton}" Margin="0,16,0,0" Click="SaveSettings_Click" />
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="DREAM" FontSize="26" FontWeight="Black" />
+                            <TextBlock Text="v0.1.0" Foreground="{StaticResource MutedBrush}" FontSize="10" FontWeight="SemiBold" Margin="5,11,0,0" />
                         </StackPanel>
-                    </ScrollViewer>
+                        <TextBlock x:Name="HeaderOnlineText" Text="500 Players Online" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" FontSize="12" Margin="1,2,0,0" />
+                    </StackPanel>
 
-                    <StackPanel Grid.Row="2" Margin="16">
-                        <TextBlock Text="BUILD MANIFEST" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                        <TextBlock x:Name="ManifestPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,5,0,12" />
-                        <TextBlock Text="SETTINGS FILE" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                        <TextBlock x:Name="SettingsPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,5,0,12" />
-                        <TextBlock Text="SESSION FILE" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                        <TextBlock x:Name="SessionPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,5,0,0" />
+                    <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                        <Button x:Name="HomeNavButton" Content="HOME" Tag="Home" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
+                        <Button x:Name="LeaderboardNavButton" Content="LEADERBOARDS" Tag="Leaderboard" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
+                        <Button x:Name="LibraryNavButton" Content="LIBRARY" Tag="Library" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
+                        <Button x:Name="StatusNavButton" Content="STATUS" Tag="Status" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2">
+                        <Button Content="DONATE" Style="{StaticResource DonateButtonStyle}" Click="Donate_Click" />
+                        <Button x:Name="SettingsNavButton" Content="SETTINGS" Tag="Settings" Style="{StaticResource NavButtonStyle}" Margin="0,8,0,0" Click="Nav_Click" />
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="8">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="58" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="74" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="56" />
+                </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,0,1" Padding="18,12">
+                <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,0,1" MouseLeftButtonDown="WindowChrome_MouseLeftButtonDown">
+                    <Grid Margin="18,10,14,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="HeaderUserText" Text="#00000 Guest" FontSize="17" FontWeight="Bold" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Border x:Name="LaunchStatePill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="12" Padding="9,4" Margin="0,0,8,0">
+                                    <TextBlock x:Name="LaunchStateText" Text="Launch: idle" Foreground="{StaticResource MutedBrush}" FontSize="12" />
+                                </Border>
+                                <TextBlock x:Name="SelectedBuildText" Text="No build selected" Foreground="{StaticResource MutedBrush}" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="360" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                            <TextBlock Text="Ultimate Donator" Foreground="{StaticResource YellowBrush}" FontSize="11" FontWeight="Bold" Margin="0,7,18,0" />
+                            <Button Content="-" Width="28" Height="24" Padding="0" Background="Transparent" BorderBrush="Transparent" Click="Minimize_Click" />
+                            <Button Content="X" Width="28" Height="24" Padding="0" Background="Transparent" BorderBrush="Transparent" Click="CloseWindow_Click" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Row="1" Margin="18,12,18,0">
+                    <Grid x:Name="HomePage">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="56" />
+                            <RowDefinition Height="92" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="82" />
+                        </Grid.RowDefinitions>
+
+                        <Border Background="#111411" CornerRadius="5" Padding="14,9">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="46" Height="46" CornerRadius="23">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#22E1FF" Offset="0" />
+                                            <GradientStop Color="#FF4C4C" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock Text="D" FontSize="24" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Welcome" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
+                                    <TextBlock x:Name="WelcomeNameText" Text="Guest" FontSize="20" FontWeight="Black" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="1" CornerRadius="5" Margin="0,8,0,0" Padding="12">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#4E58FF" Offset="0" />
+                                    <GradientStop Color="#2F92FF" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="HomeStatusTitleText" Text="Ready to check services" FontSize="17" FontWeight="Black" />
+                                <TextBlock x:Name="HomeStatusSubtitleText" Grid.Row="1" Text="Start the backend and press Check on the Status page." Foreground="#DCE7FF" FontSize="12" FontWeight="SemiBold" />
+                                <Grid Grid.Row="2" VerticalAlignment="Bottom">
+                                    <Border Height="22" Background="#3157B8" CornerRadius="3" />
+                                    <ProgressBar Height="5" Margin="3,14,3,3" Value="68" Minimum="0" Maximum="100" Foreground="#00E3C0" Background="#22569F" BorderThickness="0" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="2" CornerRadius="5" Margin="0,8,0,0" ClipToBounds="True">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#C800F5" Offset="0" />
+                                    <GradientStop Color="#6332FF" Offset="0.55" />
+                                    <GradientStop Color="#161B1A" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Grid>
+                                <TextBlock Text="DREAM" FontSize="112" FontWeight="Black" Foreground="#22FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,18,0" />
+                                <StackPanel VerticalAlignment="Bottom" Margin="14,0,14,28">
+                                    <TextBlock Text="TEAM MODES ARE HERE" FontSize="20" FontWeight="Black" />
+                                    <TextBlock Text="Squad up, check service health, pick a local build, and launch when your account is ready." Foreground="#DAD6FF" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="3" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border CornerRadius="5" Padding="12">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#80B500" Offset="0" />
+                                        <GradientStop Color="#466C00" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <StackPanel>
+                                    <TextBlock Text="SEASON PROGRESS" Foreground="#D5FF9B" FontSize="13" FontWeight="Black" />
+                                    <TextBlock x:Name="HomeBuildText" Text="No build selected" FontSize="20" FontWeight="Black" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" CornerRadius="5" Padding="12">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#EF4DA6" Offset="0" />
+                                        <GradientStop Color="#5636E8" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <StackPanel>
+                                    <TextBlock Text="LOCAL LIBRARY" Foreground="#FFE3F3" FontSize="13" FontWeight="Black" />
+                                    <TextBlock x:Name="BuildCountText" Text="0 builds installed" FontSize="20" FontWeight="Black" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+
+                    <Grid x:Name="LeaderboardPage" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="54" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="LEADERBOARDS" FontSize="22" FontWeight="Black" />
+                            <TextBlock Text="Ranked by score. Wins are 10 points, eliminations are 1 point." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Margin="0,4,0,0">
+                            <Grid Height="40"><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="#1" Foreground="{StaticResource YellowBrush}" FontWeight="Black" FontSize="17" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="synikle" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="4735 ELIMS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="3" Text="664 WINS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="4" Text="11375" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
+                            <Grid Height="40"><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="#2" FontWeight="Black" FontSize="17" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="Zetron" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="5147 ELIMS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="3" Text="575 WINS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="4" Text="10897" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
+                            <Grid Height="40"><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="#3" Foreground="#FF4FB0" FontWeight="Black" FontSize="17" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="ryzenn24" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="4475 ELIMS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="3" Text="418 WINS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="4" Text="8655" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
+                            <Grid Height="40"><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="#4" Foreground="{StaticResource AccentBrush}" FontWeight="Black" FontSize="17" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="Slope!" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="2032 ELIMS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="3" Text="510 WINS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="4" Text="7132" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
+                            <Grid Height="40"><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="#5" Foreground="{StaticResource AccentBrush}" FontWeight="Black" FontSize="17" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="Glow" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="3009 ELIMS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="3" Text="392 WINS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="4" Text="6929" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
+                            <Grid Height="40"><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="#6" Foreground="{StaticResource AccentBrush}" FontWeight="Black" FontSize="17" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="daveyyyfx" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="3973 ELIMS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="3" Text="241 WINS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="4" Text="6383" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
+                            <Grid Height="40"><Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="#7" Foreground="{StaticResource AccentBrush}" FontWeight="Black" FontSize="17" VerticalAlignment="Center"/><TextBlock Grid.Column="1" Text="sznvfx" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="2" Text="2621 ELIMS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="3" Text="376 WINS" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Grid.Column="4" Text="6381" Foreground="{StaticResource MutedBrush}" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid x:Name="LibraryPage" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="84" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
                         <Grid>
                             <StackPanel>
-                                <TextBlock Text="RUNTIME" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="Bold" />
-                                <TextBlock Text="Logs" FontSize="18" FontWeight="SemiBold" />
+                                <TextBlock Text="Library" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Contains all local builds you have installed. Launch or close the game from here." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Export report" Click="ExportReport_Click" />
-                                <Button Content="Clear" Margin="10,0,0,0" Click="ClearLogs_Click" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                <Button Content="Find an existing version" Click="AddBuildFolder_Click" />
+                                <Button Content="Open manifest" Margin="8,0,0,0" Click="OpenManifest_Click" />
+                                <Button Content="Close game" Margin="8,0,0,0" Click="CloseGame_Click" />
                             </StackPanel>
                         </Grid>
-                    </Border>
 
-                    <ListBox x:Name="LogListBox" Grid.Row="1" Margin="14" />
+                        <ListBox x:Name="BuildsListBox" Grid.Row="1" SelectionChanged="BuildsListBox_SelectionChanged">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:BuildDefinition}">
+                                    <Border Width="118" Height="144" Margin="0,0,8,8" CornerRadius="5" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" ClipToBounds="True">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="46" />
+                                            </Grid.RowDefinitions>
+                                            <Border>
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#7A1CC7" Offset="0" />
+                                                        <GradientStop Color="#101412" Offset="1" />
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                                <TextBlock Text="D" FontSize="46" FontWeight="Black" Foreground="#55FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <Border Grid.Row="1" Background="#CC111411" Padding="6,4">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding Id}" Foreground="{StaticResource MutedBrush}" FontSize="10" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+
+                    <Grid x:Name="StatusPage" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="86" />
+                            <RowDefinition Height="98" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="Status" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Check backend, database, XMPP, matchmaker, and game server reachability." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button Content="Check" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="92" Click="CheckStatus_Click" />
+                        </Grid>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="BackendStatusPill" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="BACKEND" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
+                                    <TextBlock x:Name="BackendStatusText" Text="Backend: not checked" FontSize="15" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="GameServerStatusPill" Grid.Column="2" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="GAME SERVER" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
+                                    <TextBlock x:Name="GameServerStatusText" Text="Game server: not checked" FontSize="15" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        <Border Grid.Row="2" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Margin="0,8,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="42" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid Margin="10,8">
+                                    <TextBlock Text="Runtime Logs" FontWeight="Black" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Export report" Height="26" MinHeight="26" Click="ExportReport_Click" />
+                                        <Button Content="Clear" Height="26" MinHeight="26" Margin="8,0,0,0" Click="ClearLogs_Click" />
+                                    </StackPanel>
+                                </Grid>
+                                <ListBox x:Name="LogListBox" Grid.Row="1" Margin="10,0,10,10" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <Grid x:Name="SettingsPage" Visibility="Collapsed">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="Settings &amp; Options" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Customize your launcher experience here." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" Margin="0,0,0,10" />
+
+                                <TextBlock Text="Network" Foreground="{StaticResource DimBrush}" FontWeight="Bold" />
+                                <Border Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,4,0,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="94" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="Backend URL" FontWeight="Bold" />
+                                            <TextBox x:Name="BackendUrlTextBox" Margin="0,5,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Game server host" FontWeight="Bold" />
+                                            <TextBox x:Name="GameServerHostTextBox" Margin="0,5,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3" Margin="10,0,0,0">
+                                            <TextBlock Text="Port" FontWeight="Bold" />
+                                            <TextBox x:Name="GameServerPortTextBox" Margin="0,5,0,0" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <TextBlock Text="Discord" Foreground="{StaticResource DimBrush}" FontWeight="Bold" />
+                                <Border Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,4,0,10">
+                                    <StackPanel>
+                                        <Border x:Name="DiscordAuthPill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="12" Padding="9,5" Margin="0,0,0,10">
+                                            <TextBlock x:Name="DiscordAuthTextBlock" Text="Discord: signed out" Foreground="{StaticResource MutedBrush}" />
+                                        </Border>
+                                        <TextBlock Text="Discord client id" FontWeight="Bold" />
+                                        <TextBox x:Name="DiscordClientIdTextBox" Margin="0,5,0,8" />
+                                        <TextBlock Text="Discord client secret" FontWeight="Bold" />
+                                        <PasswordBox x:Name="DiscordClientSecretPasswordBox" Margin="0,5,0,8" />
+                                        <TextBlock Text="Callback port" FontWeight="Bold" />
+                                        <TextBox x:Name="DiscordRedirectPortTextBox" Margin="0,5,0,10" Width="130" HorizontalAlignment="Left" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="LoginDiscordButton" Content="Login with Discord" Style="{StaticResource PrimaryButton}" Width="170" Click="LoginDiscord_Click" />
+                                            <Button x:Name="LogoutDiscordButton" Content="Logout" Margin="8,0,0,0" Width="90" Click="LogoutDiscord_Click" IsEnabled="False" />
+                                            <Button Content="Save settings" Margin="8,0,0,0" Width="124" Click="SaveSettings_Click" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="Local files" Foreground="{StaticResource DimBrush}" FontWeight="Bold" />
+                                <Border Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,4,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="BUILD MANIFEST" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
+                                        <TextBlock x:Name="ManifestPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,2,0,8" />
+                                        <TextBlock Text="SETTINGS FILE" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
+                                        <TextBlock x:Name="SettingsPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,2,0,8" />
+                                        <TextBlock Text="SESSION FILE" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
+                                        <TextBlock x:Name="SessionPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Grid>
-            </Border>
+
+                <Border Grid.Row="2" Padding="18,8,18,12">
+                    <Button x:Name="LaunchButton" Content="LAUNCH DREAM" Style="{StaticResource PrimaryButton}" Height="38" Click="Launch_Click" IsEnabled="False" />
+                </Border>
+            </Grid>
         </Grid>
-    </Grid>
+    </Border>
 </Window>
