@@ -65,8 +65,6 @@ public partial class MainWindow : Window
         GameServerHostTextBox.Text = _settings.GameServerHost;
         GameServerPortTextBox.Text = _settings.GameServerPort.ToString();
         DiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
-        AuthBackendUrlTextBox.Text = _settings.BackendUrl;
-        AuthDiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
         ContentDirectoryTextBox.Text = _settings.ContentDirectory;
         AutoDownloadCheckBox.IsChecked = _settings.AutoDownload;
         DetailedDownloadsCheckBox.IsChecked = _settings.DetailedDownloads;
@@ -100,7 +98,6 @@ public partial class MainWindow : Window
         {
             _settings = ReadSettingsFromInputs();
             await _settingsService.SaveAsync(_settings);
-            SyncSettingsInputsToAuthGate();
             UpdateBuildSummary();
             AddLog("Settings saved.");
         }
@@ -112,23 +109,18 @@ public partial class MainWindow : Window
 
     private async void LoginDiscord_Click(object sender, RoutedEventArgs e)
     {
-        await LoginDiscordAsync(syncFromAuthGate: false);
+        await LoginDiscordAsync();
     }
 
     private async void AuthGateLogin_Click(object sender, RoutedEventArgs e)
     {
-        await LoginDiscordAsync(syncFromAuthGate: true);
+        await LoginDiscordAsync();
     }
 
-    private async Task LoginDiscordAsync(bool syncFromAuthGate)
+    private async Task LoginDiscordAsync()
     {
         try
         {
-            if (syncFromAuthGate)
-            {
-                SyncAuthGateInputsToSettingsInputs();
-            }
-
             _settings = ReadSettingsFromInputs();
             await _settingsService.SaveAsync(_settings);
 
@@ -446,18 +438,6 @@ public partial class MainWindow : Window
             ContentDirectoryTextBox.Text,
             AutoDownloadCheckBox.IsChecked == true,
             DetailedDownloadsCheckBox.IsChecked == true);
-    }
-
-    private void SyncAuthGateInputsToSettingsInputs()
-    {
-        BackendUrlTextBox.Text = AuthBackendUrlTextBox.Text;
-        DiscordRedirectPortTextBox.Text = AuthDiscordRedirectPortTextBox.Text;
-    }
-
-    private void SyncSettingsInputsToAuthGate()
-    {
-        AuthBackendUrlTextBox.Text = _settings.BackendUrl;
-        AuthDiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
     }
 
     private void SetDiscordLoginBusy(bool busy, string? message = null)
