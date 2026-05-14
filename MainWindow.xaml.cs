@@ -19,6 +19,7 @@ public partial class MainWindow : Window
 {
     private readonly SettingsService _settingsService = new();
     private readonly BuildManifestService _buildManifestService = new();
+    private readonly BuildVerificationService _buildVerificationService = new();
     private readonly StatusService _statusService = new();
     private readonly LaunchService _launchService = new();
     private readonly DiscordAuthService _discordAuthService = new();
@@ -26,6 +27,8 @@ public partial class MainWindow : Window
     private readonly DreamBackendAuthService _dreamBackendAuthService = new();
     private readonly ObservableCollection<BuildDefinition> _builds = [];
     private readonly ObservableCollection<string> _logs = [];
+    private readonly ObservableCollection<BuildVerificationItem> _verificationResults = [];
+    private readonly ObservableCollection<LauncherServiceStatus> _backendServices = [];
     private LauncherSettings _settings = LauncherSettings.Default;
     private DiscordSession? _discordSession;
     private LaunchState _launchState = LaunchState.Idle;
@@ -36,6 +39,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         BuildsListBox.ItemsSource = _builds;
         LogListBox.ItemsSource = _logs;
+        VerificationResultsListBox.ItemsSource = _verificationResults;
+        BackendServicesListBox.ItemsSource = _backendServices;
         ManifestPathTextBlock.Text = _buildManifestService.ManifestPath;
         SettingsPathTextBlock.Text = _settingsService.SettingsPath;
         SessionPathTextBlock.Text = _discordSessionService.SessionPath;
@@ -58,6 +63,9 @@ public partial class MainWindow : Window
         GameServerHostTextBox.Text = _settings.GameServerHost;
         GameServerPortTextBox.Text = _settings.GameServerPort.ToString();
         DiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
+        ContentDirectoryTextBox.Text = _settings.ContentDirectory;
+        AutoDownloadCheckBox.IsChecked = _settings.AutoDownload;
+        DetailedDownloadsCheckBox.IsChecked = _settings.DetailedDownloads;
     }
 
     private async Task LoadDiscordSessionAsync()
@@ -88,6 +96,7 @@ public partial class MainWindow : Window
         {
             _settings = ReadSettingsFromInputs();
             await _settingsService.SaveAsync(_settings);
+            UpdateBuildSummary();
             AddLog("Settings saved.");
         }
         catch (Exception ex)
@@ -149,6 +158,7 @@ public partial class MainWindow : Window
 
             SetStatus(BackendStatusPill, BackendStatusText, "Backend", backendTask.Result);
             SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", gameServerTask.Result);
+            UpdateBackendServices(backendTask.Result);
             UpdateHomeStatusSummary(backendTask.Result, gameServerTask.Result);
             AddStatusSummary("Backend services", backendTask.Result);
             AddLog("Status checked.");
@@ -219,6 +229,54 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             AddError("Open manifest", ex);
+        }
+    }
+
+    private void VerifySelectedBuild_Click(object sender, RoutedEventArgs e)
+    {
+        if (BuildsListBox.SelectedItem is not BuildDefinition build)
+        {
+            AddLog("Verify skipped: select a build first.");
+            ShowPage("Downloads");
+            return;
+        }
+
+        try
+        {
+            var result = _buildVerificationService.Verify(build);
+            _verificationResults.Clear();
+
+            foreach (var item in result.Items)
+            {
+                _verificationResults.Add(item);
+            }
+
+            DownloadStatusText.Text = result.Summary;
+            DownloadProgressBar.Value = result.CanLaunch ? 100 : 45;
+            AddLog($"Verify: {result.Summary}");
+            ShowPage("Downloads");
+        }
+        catch (Exception ex)
+        {
+            AddError("Verify build", ex);
+        }
+    }
+
+    private void OpenBuildFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (BuildsListBox.SelectedItem is not BuildDefinition build)
+        {
+            AddLog("Open folder skipped: select a build first.");
+            return;
+        }
+
+        try
+        {
+            _launchService.OpenInExplorer(build.Path);
+        }
+        catch (Exception ex)
+        {
+            AddError("Open folder", ex);
         }
     }
 
@@ -326,13 +384,44 @@ public partial class MainWindow : Window
         }
     }
 
+    private void BrowseContentDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var dialog = new Forms.FolderBrowserDialog
+            {
+                Description = "Select the Dream content directory",
+                ShowNewFolderButton = true,
+                UseDescriptionForTitle = true
+            };
+
+            if (Directory.Exists(ContentDirectoryTextBox.Text))
+            {
+                dialog.SelectedPath = ContentDirectoryTextBox.Text;
+            }
+
+            if (dialog.ShowDialog() == Forms.DialogResult.OK)
+            {
+                ContentDirectoryTextBox.Text = dialog.SelectedPath;
+                AddLog($"Content directory selected: {dialog.SelectedPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            AddError("Content directory", ex);
+        }
+    }
+
     private LauncherSettings ReadSettingsFromInputs()
     {
         return LauncherSettings.FromInput(
             BackendUrlTextBox.Text,
             GameServerHostTextBox.Text,
             GameServerPortTextBox.Text,
-            DiscordRedirectPortTextBox.Text);
+            DiscordRedirectPortTextBox.Text,
+            ContentDirectoryTextBox.Text,
+            AutoDownloadCheckBox.IsChecked == true,
+            DetailedDownloadsCheckBox.IsChecked == true);
     }
 
     private void Nav_Click(object sender, RoutedEventArgs e)
@@ -373,12 +462,14 @@ public partial class MainWindow : Window
         HomePage.Visibility = page == "Home" ? Visibility.Visible : Visibility.Collapsed;
         LeaderboardPage.Visibility = page == "Leaderboard" ? Visibility.Visible : Visibility.Collapsed;
         LibraryPage.Visibility = page == "Library" ? Visibility.Visible : Visibility.Collapsed;
+        DownloadsPage.Visibility = page == "Downloads" ? Visibility.Visible : Visibility.Collapsed;
         StatusPage.Visibility = page == "Status" ? Visibility.Visible : Visibility.Collapsed;
         SettingsPage.Visibility = page == "Settings" ? Visibility.Visible : Visibility.Collapsed;
 
         SetNavButton(HomeNavButton, page == "Home");
         SetNavButton(LeaderboardNavButton, page == "Leaderboard");
         SetNavButton(LibraryNavButton, page == "Library");
+        SetNavButton(DownloadsNavButton, page == "Downloads");
         SetNavButton(StatusNavButton, page == "Status");
         SetNavButton(SettingsNavButton, page == "Settings");
     }
@@ -495,12 +586,16 @@ public partial class MainWindow : Window
         {
             SelectedBuildText.Text = build.Name;
             HomeBuildText.Text = build.Name;
+            DownloadsSelectedBuildText.Text = build.Name;
         }
         else
         {
             SelectedBuildText.Text = "No build selected";
             HomeBuildText.Text = "No build selected";
+            DownloadsSelectedBuildText.Text = "No build selected";
         }
+
+        DownloadsContentDirectoryText.Text = $"Content directory: {_settings.ContentDirectory}";
     }
 
     private void UpdateHomeStatusSummary(ServiceCheckResult backend, ServiceCheckResult gameServer)
@@ -513,6 +608,35 @@ public partial class MainWindow : Window
             : "Backend status was checked. Game server is still offline or not started.";
     }
 
+    private void UpdateBackendServices(ServiceCheckResult backend)
+    {
+        _backendServices.Clear();
+
+        if (backend.BackendStatus?.Services.Count > 0)
+        {
+            foreach (var service in backend.BackendStatus.Services)
+            {
+                _backendServices.Add(service);
+            }
+
+            var connectedClients = backend.BackendStatus.Services
+                .Where(service => service.ConnectedClients is not null)
+                .Sum(service => service.ConnectedClients ?? 0);
+
+            HeaderOnlineText.Text = $"{connectedClients} Players Online";
+            return;
+        }
+
+        _backendServices.Add(new LauncherServiceStatus
+        {
+            Id = "backend",
+            Label = "Backend API",
+            State = backend.State.ToString().ToLowerInvariant(),
+            Details = backend.Error ?? backend.Summary ?? "No backend details available"
+        });
+        HeaderOnlineText.Text = "0 Players Online";
+    }
+
     private string BuildReport()
     {
         var selectedBuild = BuildsListBox.SelectedItem as BuildDefinition;
@@ -523,6 +647,9 @@ public partial class MainWindow : Window
         report.AppendLine($"Launch state: {_launchState}");
         report.AppendLine($"Backend URL: {_settings.BackendUrl}");
         report.AppendLine($"Game server: {_settings.GameServerHost}:{_settings.GameServerPort}");
+        report.AppendLine($"Content directory: {_settings.ContentDirectory}");
+        report.AppendLine($"Auto download: {_settings.AutoDownload}");
+        report.AppendLine($"Detailed downloads: {_settings.DetailedDownloads}");
         report.AppendLine($"Discord signed in: {_discordSession is not null && !_discordSession.IsExpired}");
 
         if (_discordSession is not null)

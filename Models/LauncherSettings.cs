@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json.Serialization;
 
 namespace DreamLauncher.Models;
@@ -8,13 +9,16 @@ public sealed class LauncherSettings
     private const string DefaultGameServerHost = "127.0.0.1";
     private const int DefaultGameServerPort = 7777;
     private const int DefaultDiscordRedirectPort = 53121;
+    private static readonly string DefaultContentDirectory =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Dream Builds");
 
     public static LauncherSettings Default { get; } = new()
     {
         BackendUrl = DefaultBackendUrl,
         GameServerHost = DefaultGameServerHost,
         GameServerPort = DefaultGameServerPort,
-        DiscordRedirectPort = DefaultDiscordRedirectPort
+        DiscordRedirectPort = DefaultDiscordRedirectPort,
+        ContentDirectory = DefaultContentDirectory
     };
 
     public string BackendUrl { get; init; } = DefaultBackendUrl;
@@ -22,6 +26,9 @@ public sealed class LauncherSettings
     public int GameServerPort { get; init; } = DefaultGameServerPort;
     public int DiscordRedirectPort { get; init; } = DefaultDiscordRedirectPort;
     public string DiscordScopes { get; init; } = "identify";
+    public string ContentDirectory { get; init; } = DefaultContentDirectory;
+    public bool AutoDownload { get; init; }
+    public bool DetailedDownloads { get; init; } = true;
 
     [JsonIgnore]
     public string DiscordRedirectUri => $"http://127.0.0.1:{DiscordRedirectPort}/callback/";
@@ -30,7 +37,10 @@ public sealed class LauncherSettings
         string? backendUrl,
         string? gameServerHost,
         string? gameServerPort,
-        string? discordRedirectPort)
+        string? discordRedirectPort,
+        string? contentDirectory,
+        bool autoDownload,
+        bool detailedDownloads)
     {
         return new LauncherSettings
         {
@@ -38,7 +48,10 @@ public sealed class LauncherSettings
             GameServerHost = string.IsNullOrWhiteSpace(gameServerHost) ? Default.GameServerHost : gameServerHost.Trim(),
             GameServerPort = NormalizePort(gameServerPort, Default.GameServerPort),
             DiscordRedirectPort = NormalizePort(discordRedirectPort, Default.DiscordRedirectPort),
-            DiscordScopes = "identify"
+            DiscordScopes = "identify",
+            ContentDirectory = NormalizeDirectory(contentDirectory),
+            AutoDownload = autoDownload,
+            DetailedDownloads = detailedDownloads
         };
     }
 
@@ -55,7 +68,10 @@ public sealed class LauncherSettings
             GameServerHost = string.IsNullOrWhiteSpace(settings.GameServerHost) ? Default.GameServerHost : settings.GameServerHost.Trim(),
             GameServerPort = settings.GameServerPort is > 0 and <= 65535 ? settings.GameServerPort : Default.GameServerPort,
             DiscordRedirectPort = settings.DiscordRedirectPort is > 0 and <= 65535 ? settings.DiscordRedirectPort : Default.DiscordRedirectPort,
-            DiscordScopes = string.IsNullOrWhiteSpace(settings.DiscordScopes) ? "identify" : settings.DiscordScopes.Trim()
+            DiscordScopes = string.IsNullOrWhiteSpace(settings.DiscordScopes) ? "identify" : settings.DiscordScopes.Trim(),
+            ContentDirectory = NormalizeDirectory(settings.ContentDirectory),
+            AutoDownload = settings.AutoDownload,
+            DetailedDownloads = settings.DetailedDownloads
         };
     }
 
@@ -82,5 +98,11 @@ public sealed class LauncherSettings
         return int.TryParse(value, out var port) && port is > 0 and <= 65535
             ? port
             : fallback;
+    }
+
+    private static string NormalizeDirectory(string? value)
+    {
+        var raw = string.IsNullOrWhiteSpace(value) ? DefaultContentDirectory : value.Trim();
+        return Path.GetFullPath(Environment.ExpandEnvironmentVariables(raw));
     }
 }

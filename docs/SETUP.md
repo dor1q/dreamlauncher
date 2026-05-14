@@ -23,6 +23,7 @@ Checked on 2026-05-13.
 3. Visual Studio with `.NET desktop development` for XAML designer and debugging.
 4. Git.
 5. Discord application configured for backend-owned OAuth login.
+6. A local content directory for imported or future downloaded builds. Default: `Documents\Dream Builds`.
 
 ## Required For Backend Work
 

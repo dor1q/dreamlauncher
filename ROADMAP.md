@@ -18,9 +18,9 @@ This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: a
 | WPF app foundation | Done | .NET 8 WPF shell, left navigation, settings, services, local runtime files |
 | Discord authorization | Done | Backend-owned OAuth with browser callback through local loopback listener |
 | Dream backend identity | Done | Launcher stores a short-lived Dream session and requests a backend exchange code before game start |
-| Local build library | Active | Existing folder import is ready; remote manifests are next |
-| Status surface | Active | Backend status endpoint is wired; richer UI grouping is next |
-| Downloads and repair | Queued | Needs official manifest format and content source |
+| Local build library | Active | Existing folder import and local verification are ready; remote manifests are next |
+| Status surface | Active | Backend service cards are wired; game-server sessions are next |
+| Downloads and repair | Active | Content directory and verify flow are ready; remote installs need official manifest/source |
 | Packaging and updates | Queued | Requires release channel decision |
 
 ## Now
@@ -29,7 +29,7 @@ This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: a
 | --- | --- | --- |
 | P0 | Keep WPF build green | Launcher remains easy to iterate on |
 | P0 | Finish local environment setup | `dotnet`, MongoDB, backend, and VS tooling work from normal shells |
-| P1 | Expand status UI grouping | Launcher can show each backend service without relying on logs |
+| P1 | Define remote build manifest | Downloads can move from local verify workflow to real install/repair |
 | P1 | Harden backend auth errors | User sees clear messages when Discord OAuth or Dream session exchange fails |
 | P2 | Prepare build manifest schema | Future install, verify, and repair work has a stable data contract |
 
@@ -43,7 +43,7 @@ Goal: make the repository easy to clone, build, run, and continue.
 - [x] Roadmap split into clear implementation phases.
 - [x] Local setup checklist documented.
 - [x] Build verified with .NET 8 SDK.
-- [x] Game-style shell with Home, Leaderboards, Library, Status, and Settings pages.
+- [x] Game-style shell with Home, Leaderboards, Library, Downloads, Status, and Settings pages.
 - [ ] Add CI build after final toolchain paths are stable.
 
 ## Phase 1 - Authentication And Launch Foundation
@@ -70,7 +70,7 @@ Goal: replace guesswork with a clear operational status page.
 - [x] Return backend, MongoDB, XMPP, and matchmaker status.
 - [x] Keep TCP game-server check as a fallback signal.
 - [x] Read backend status in launcher and log service-level health.
-- [ ] Add launcher status cards grouped by service.
+- [x] Add launcher status cards grouped by service.
 - [ ] Add game-server process/session status once backend exposes it.
 - [ ] Add recent incidents or maintenance message when the backend exposes it.
 - [ ] Move from polling to WebSocket/SSE after backend events exist.
@@ -80,10 +80,10 @@ Goal: replace guesswork with a clear operational status page.
 Goal: let the launcher manage game builds instead of only launching manually imported folders.
 
 - [ ] Define official Dream build manifest format.
-- [ ] Add content directory setting.
+- [x] Add content directory setting.
 - [ ] List available remote builds.
 - [ ] Add install action.
-- [ ] Add file verification.
+- [x] Add file verification.
 - [ ] Add repair action for missing or changed files.
 - [ ] Add progress, speed, ETA, pause/cancel, and retry behavior.
 - [ ] Add disk-space checks before install.

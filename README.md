@@ -10,7 +10,8 @@ Dream Launcher is a C# + WPF desktop launcher for the Dream project. It is focus
 | Authentication | Browser Discord OAuth started and completed through the Dream backend |
 | Backend identity | Dream launcher session exchange through the Dream backend |
 | Backend status | Reads `/launcher/api/status` and logs service-level health |
-| Local library | Build manifest plus existing folder import |
+| Local library | Build manifest, existing folder import, and build verification |
+| Downloads | Content directory setting plus Downloads page for install/verify workflow |
 | Launch flow | Executable validation, exchange-code placeholders, process start |
 | Runtime control | Launch state, known process close action, runtime log |
 | Diagnostics | Exportable report without saved tokens or secrets |
@@ -74,7 +75,7 @@ The launcher stores local machine/user state under `%APPDATA%\Dream Launcher`.
 
 | File | Contents |
 | --- | --- |
-| `settings.json` | Backend URL, server host/port, Discord callback port |
+| `settings.json` | Backend URL, server host/port, Discord callback port, content directory, download preferences |
 | `discord-session.json` | Saved local Dream launcher session |
 
 Do not commit files from `%APPDATA%`, client secrets, access tokens, refresh tokens, or local game builds.
@@ -108,6 +109,17 @@ Supported launch argument placeholders:
 | `{accountId}` | Dream account id |
 | `{displayName}` | Account display name |
 | `{discordId}` | Discord user id |
+
+## Downloads And Verify
+
+The Downloads page currently supports the local build-management flow:
+
+1. import an existing build folder;
+2. select it in Library;
+3. run Verify selected;
+4. open the build folder or manifest when something needs fixing.
+
+Remote downloads are intentionally gated behind a future official build manifest and content source.
 
 ## Discord OAuth Setup
 

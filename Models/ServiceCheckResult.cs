@@ -16,4 +16,5 @@ public sealed class ServiceCheckResult
     public int? StatusCode { get; init; }
     public string? Summary { get; init; }
     public string? Error { get; init; }
+    public LauncherStatusResponse? BackendStatus { get; init; }
 }

@@ -44,7 +44,8 @@ public sealed class StatusService
                 Summary = status is null ? null : BuildStatusSummary(status),
                 Error = response.IsSuccessStatusCode
                     ? BuildOfflineServiceSummary(offlineServices)
-                    : $"HTTP {(int)response.StatusCode}"
+                    : $"HTTP {(int)response.StatusCode}",
+                BackendStatus = status
             };
         }
         catch (Exception ex)

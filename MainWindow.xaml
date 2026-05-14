@@ -38,6 +38,7 @@
                         <Button x:Name="HomeNavButton" Content="HOME" Tag="Home" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
                         <Button x:Name="LeaderboardNavButton" Content="LEADERBOARDS" Tag="Leaderboard" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
                         <Button x:Name="LibraryNavButton" Content="LIBRARY" Tag="Library" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
+                        <Button x:Name="DownloadsNavButton" Content="DOWNLOADS" Tag="Downloads" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
                         <Button x:Name="StatusNavButton" Content="STATUS" Tag="Status" Style="{StaticResource NavButtonStyle}" Click="Nav_Click" />
                     </StackPanel>
 
@@ -258,10 +259,77 @@
                         </ListBox>
                     </Grid>
 
+                    <Grid x:Name="DownloadsPage" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="76" />
+                            <RowDefinition Height="104" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <StackPanel>
+                                <TextBlock Text="Downloads" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Manage local builds, verify required files, and prepare installs from the content directory." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                <Button Content="Find existing version" Click="AddBuildFolder_Click" />
+                                <Button Content="Verify selected" Margin="8,0,0,0" Click="VerifySelectedBuild_Click" />
+                                <Button Content="Open folder" Margin="8,0,0,0" Click="OpenBuildFolder_Click" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="1" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="DownloadsSelectedBuildText" Text="No build selected" FontSize="17" FontWeight="Black" />
+                                <TextBlock x:Name="DownloadsContentDirectoryText" Grid.Row="1" Text="Content directory is not configured" Foreground="{StaticResource MutedBrush}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                <Grid Grid.Row="2" VerticalAlignment="Bottom">
+                                    <Border Height="22" Background="#202621" CornerRadius="3" />
+                                    <ProgressBar x:Name="DownloadProgressBar" Height="5" Margin="3,14,3,3" Value="0" Minimum="0" Maximum="100" Foreground="{StaticResource AccentBrush}" Background="#2A302D" BorderThickness="0" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="2" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Margin="0,8,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="42" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid Margin="10,8">
+                                    <TextBlock Text="Verify Results" FontWeight="Black" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="DownloadStatusText" Text="Run Verify selected to inspect the current build." Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="360" />
+                                </Grid>
+                                <ListBox x:Name="VerificationResultsListBox" Grid.Row="1" Margin="10,0,10,10">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:BuildVerificationItem}">
+                                            <Border BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="0,0,0,1" Padding="0,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="90" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Title}" FontWeight="Bold" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Details}" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding State}" FontWeight="Black" HorizontalAlignment="Right" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
                     <Grid x:Name="StatusPage" Visibility="Collapsed">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="86" />
                             <RowDefinition Height="98" />
+                            <RowDefinition Height="140" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid>
@@ -291,6 +359,34 @@
                             </Border>
                         </Grid>
                         <Border Grid.Row="2" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Margin="0,8,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="34" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Backend Services" FontWeight="Black" Margin="10,8,10,0" />
+                                <ListBox x:Name="BackendServicesListBox" Grid.Row="1" Margin="10,0,10,10">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:LauncherServiceStatus}">
+                                            <Border Width="146" Height="78" Background="#151817" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="9" Margin="0,0,8,8">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Label}" FontWeight="Black" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding State}" Foreground="{StaticResource AccentBrush}" FontSize="12" FontWeight="Bold" />
+                                                    <TextBlock Text="{Binding Details}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="3" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Margin="0,8,0,0">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="42" />
@@ -358,6 +454,17 @@
                                 <TextBlock Text="Local files" Foreground="{StaticResource DimBrush}" FontWeight="Bold" />
                                 <Border Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,4,0,0">
                                     <StackPanel>
+                                        <CheckBox x:Name="AutoDownloadCheckBox" Content="Auto download new content patches" />
+                                        <CheckBox x:Name="DetailedDownloadsCheckBox" Content="Show detailed download and verify output" />
+                                        <TextBlock Text="CONTENT DIRECTORY" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
+                                        <Grid Margin="0,2,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="86" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox x:Name="ContentDirectoryTextBox" />
+                                            <Button Grid.Column="1" Content="Browse" Margin="8,0,0,0" Click="BrowseContentDirectory_Click" />
+                                        </Grid>
                                         <TextBlock Text="BUILD MANIFEST" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
                                         <TextBlock x:Name="ManifestPathTextBlock" TextTrimming="CharacterEllipsis" Margin="0,2,0,8" />
                                         <TextBlock Text="SETTINGS FILE" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="Black" />
