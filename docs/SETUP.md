@@ -22,14 +22,25 @@ Checked on 2026-05-13.
 2. Windows Desktop runtime.
 3. Visual Studio with `.NET desktop development` for XAML designer and debugging.
 4. Git.
-5. Discord application credentials for OAuth testing.
+5. Discord application configured for backend-owned OAuth login.
 
 ## Required For Backend Work
 
 1. Node.js LTS.
 2. npm.
 3. MongoDB running locally.
-4. Backend `.env` configured for MongoDB and Discord integration.
+4. Backend `.env` configured for MongoDB and Discord integration:
+
+```env
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+```
+
+The Discord redirect URI in the Developer Portal must include:
+
+```text
+http://127.0.0.1:53121/callback/
+```
 
 ## PATH Fixes
 

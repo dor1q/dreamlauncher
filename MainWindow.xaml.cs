@@ -57,8 +57,6 @@ public partial class MainWindow : Window
         BackendUrlTextBox.Text = _settings.BackendUrl;
         GameServerHostTextBox.Text = _settings.GameServerHost;
         GameServerPortTextBox.Text = _settings.GameServerPort.ToString();
-        DiscordClientIdTextBox.Text = _settings.DiscordClientId;
-        DiscordClientSecretPasswordBox.Password = _settings.DiscordClientSecret;
         DiscordRedirectPortTextBox.Text = _settings.DiscordRedirectPort.ToString();
     }
 
@@ -334,8 +332,6 @@ public partial class MainWindow : Window
             BackendUrlTextBox.Text,
             GameServerHostTextBox.Text,
             GameServerPortTextBox.Text,
-            DiscordClientIdTextBox.Text,
-            DiscordClientSecretPasswordBox.Password,
             DiscordRedirectPortTextBox.Text);
     }
 
@@ -560,6 +556,12 @@ public partial class MainWindow : Window
             FileNotFoundException fileNotFound => $"Required file is missing: {fileNotFound.FileName}",
             TimeoutException => "The operation timed out. Check Discord/backend connectivity and try again.",
             HttpRequestException => "Network request failed. Check backend URL, internet connection, or service availability.",
+            InvalidOperationException invalid when invalid.Message.Contains("discord_oauth_not_configured", StringComparison.OrdinalIgnoreCase) =>
+                "Discord OAuth is not configured on the backend. Add DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET to backend .env.",
+            InvalidOperationException invalid when invalid.Message.Contains("invalid_launcher_token", StringComparison.OrdinalIgnoreCase) =>
+                "Saved launcher session is invalid or expired. Sign out and log in with Discord again.",
+            InvalidOperationException invalid when invalid.Message.Contains("discord_login_failed", StringComparison.OrdinalIgnoreCase) =>
+                "Discord login failed on the backend. Check the Discord application redirect URI and backend .env.",
             InvalidOperationException invalid when invalid.Message.Contains("account_not_registered", StringComparison.OrdinalIgnoreCase) =>
                 "This Discord account is not registered in Dream backend.",
             InvalidOperationException invalid when invalid.Message.Contains("Backend exchange failed", StringComparison.OrdinalIgnoreCase) =>

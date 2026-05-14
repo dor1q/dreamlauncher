@@ -7,8 +7,8 @@ Dream Launcher is a C# + WPF desktop launcher for the Dream project. It is focus
 | Area | State |
 | --- | --- |
 | Desktop shell | WPF app on .NET 8 with game-style left navigation |
-| Authentication | Discord OAuth in the launcher |
-| Backend identity | Discord access token exchange through the Dream backend |
+| Authentication | Browser Discord OAuth started and completed through the Dream backend |
+| Backend identity | Dream launcher session exchange through the Dream backend |
 | Backend status | Reads `/launcher/api/status` and logs service-level health |
 | Local library | Build manifest plus existing folder import |
 | Launch flow | Executable validation, exchange-code placeholders, process start |
@@ -52,7 +52,7 @@ Verified command on the current machine:
 | Git | Version control and GitHub push |
 | Dream backend | Exchange Discord login for a launch exchange code |
 | MongoDB | Backend database for the Dream server workspace |
-| Discord application | OAuth client id, secret, and redirect URI |
+| Discord application | OAuth client id, secret, and redirect URI configured on the backend |
 
 For the machine-specific checklist, see [docs/SETUP.md](docs/SETUP.md).
 
@@ -74,8 +74,8 @@ The launcher stores local machine/user state under `%APPDATA%\Dream Launcher`.
 
 | File | Contents |
 | --- | --- |
-| `settings.json` | Backend URL, server host/port, Discord OAuth settings |
-| `discord-session.json` | Saved local Discord OAuth session |
+| `settings.json` | Backend URL, server host/port, Discord callback port |
+| `discord-session.json` | Saved local Dream launcher session |
 
 Do not commit files from `%APPDATA%`, client secrets, access tokens, refresh tokens, or local game builds.
 
@@ -119,9 +119,15 @@ Supported launch argument placeholders:
 http://127.0.0.1:53121/callback/
 ```
 
-4. Put the application Client ID into launcher settings.
-5. Put the Client Secret into launcher settings.
-6. Keep the launcher callback port at `53121`, or change the Discord redirect URI to match the port entered in the launcher.
+4. Put the application Client ID and Client Secret into backend `.env`:
+
+```env
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+```
+
+5. Keep the launcher callback port at `53121`, or change the Discord redirect URI to match the port entered in the launcher.
+6. Do not put the Client Secret into launcher settings or commit it to the repository.
 
 ## Backend Contract
 
@@ -136,15 +142,23 @@ Expected backend status response includes overall status, uptime, and service en
 Before launch, the launcher calls:
 
 ```text
+GET /launcher/api/auth/discord/start
+POST /launcher/api/auth/discord/callback
+```
+
+The backend owns the Discord OAuth client secret and returns a short-lived Dream launcher session. Then the launcher calls:
+
+```text
 POST /launcher/api/auth/discord/exchange
 ```
 
 Expected backend behavior:
 
-1. Validate the Discord access token.
-2. Find or reject the linked Dream account by Discord user id.
-3. Return a short-lived one-time exchange code.
-4. Let the launcher inject the code into launch arguments.
+1. Create a Discord OAuth authorization URL for the local loopback callback.
+2. Exchange the returned Discord OAuth code on the backend.
+3. Create or find the Dream account linked to the Discord user id.
+4. Return a short-lived one-time exchange code.
+5. Let the launcher inject the code into launch arguments.
 
 ## Development Flow
 

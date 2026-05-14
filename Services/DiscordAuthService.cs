@@ -4,7 +4,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using DreamLauncher.Models;
@@ -13,10 +12,6 @@ namespace DreamLauncher.Services;
 
 public sealed class DiscordAuthService
 {
-    private const string AuthorizeUrl = "https://discord.com/oauth2/authorize";
-    private const string TokenUrl = "https://discord.com/api/oauth2/token";
-    private const string CurrentUserUrl = "https://discord.com/api/users/@me";
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -29,24 +24,13 @@ public sealed class DiscordAuthService
 
     public async Task<DiscordSession> SignInAsync(LauncherSettings settings, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(settings.DiscordClientId))
-        {
-            throw new InvalidOperationException("Discord client id is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(settings.DiscordClientSecret))
-        {
-            throw new InvalidOperationException("Discord client secret is required.");
-        }
-
-        var state = CreateBase64Url(32);
-        var authUrl = BuildAuthorizationUrl(settings, state);
-
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromMinutes(5));
 
+        var start = await StartLoginAsync(settings, timeout.Token);
         var callbackTask = WaitForCallbackAsync(settings.DiscordRedirectPort, timeout.Token);
-        OpenBrowser(authUrl);
+
+        OpenBrowser(start.AuthorizationUrl);
 
         Uri callbackUri;
         try
@@ -65,7 +49,7 @@ public sealed class DiscordAuthService
             throw new InvalidOperationException($"Discord rejected authorization: {error}");
         }
 
-        if (!query.TryGetValue("state", out var returnedState) || returnedState != state)
+        if (!query.TryGetValue("state", out var returnedState) || returnedState != start.State)
         {
             throw new InvalidOperationException("Discord authorization state mismatch.");
         }
@@ -75,33 +59,68 @@ public sealed class DiscordAuthService
             throw new InvalidOperationException("Discord authorization code was not returned.");
         }
 
-        var token = await ExchangeCodeAsync(settings, code, timeout.Token);
-        var user = await GetCurrentUserAsync(token.AccessToken, timeout.Token);
+        var session = await CompleteLoginAsync(settings, start.State, code, timeout.Token);
 
         return new DiscordSession
         {
-            AccessToken = token.AccessToken,
-            RefreshToken = token.RefreshToken,
-            TokenType = token.TokenType,
-            Scope = token.Scope,
-            ExpiresAtUtc = DateTimeOffset.UtcNow.AddSeconds(token.ExpiresIn),
-            User = user
+            AccessToken = session.AccessToken,
+            TokenType = session.TokenType,
+            Scope = "dream.launcher",
+            ExpiresAtUtc = DateTimeOffset.UtcNow.AddSeconds(session.ExpiresInSeconds),
+            User = session.Discord
         };
     }
 
-    private static string BuildAuthorizationUrl(LauncherSettings settings, string state)
+    private static async Task<DiscordLoginStartResponse> StartLoginAsync(
+        LauncherSettings settings,
+        CancellationToken cancellationToken)
     {
-        var query = new Dictionary<string, string>
-        {
-            ["response_type"] = "code",
-            ["client_id"] = settings.DiscordClientId,
-            ["redirect_uri"] = settings.DiscordRedirectUri,
-            ["scope"] = settings.DiscordScopes,
-            ["state"] = state,
-            ["prompt"] = "consent"
-        };
+        var endpoint = new Uri(
+            $"{settings.BackendUrl.TrimEnd('/')}/launcher/api/auth/discord/start?redirect_uri={Uri.EscapeDataString(settings.DiscordRedirectUri)}");
 
-        return $"{AuthorizeUrl}?{BuildQuery(query)}";
+        using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await Http.SendAsync(request, cancellationToken);
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Backend Discord login start failed ({(int)response.StatusCode}): {raw}");
+        }
+
+        return JsonSerializer.Deserialize<DiscordLoginStartResponse>(raw, JsonOptions)
+            ?? throw new InvalidOperationException("Backend Discord login start response was empty.");
+    }
+
+    private static async Task<DreamLauncherSessionResponse> CompleteLoginAsync(
+        LauncherSettings settings,
+        string state,
+        string code,
+        CancellationToken cancellationToken)
+    {
+        var endpoint = new Uri($"{settings.BackendUrl.TrimEnd('/')}/launcher/api/auth/discord/callback");
+        var body = JsonSerializer.Serialize(new
+        {
+            code,
+            state,
+            redirect_uri = settings.DiscordRedirectUri
+        });
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await Http.SendAsync(request, cancellationToken);
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"Backend Discord login callback failed ({(int)response.StatusCode}): {raw}");
+        }
+
+        return JsonSerializer.Deserialize<DreamLauncherSessionResponse>(raw, JsonOptions)
+            ?? throw new InvalidOperationException("Backend Discord login callback response was empty.");
     }
 
     private static async Task<Uri> WaitForCallbackAsync(int port, CancellationToken cancellationToken)
@@ -131,7 +150,7 @@ public sealed class DiscordAuthService
                 throw new InvalidOperationException("OAuth callback request was invalid.");
             }
 
-            var body = "<!doctype html><html><head><meta charset=\"utf-8\"><title>Dream Launcher</title></head><body style=\"font-family:Segoe UI,Arial,sans-serif;background:#0b1020;color:#edf2ff\">Discord login finished. You can return to Dream Launcher.</body></html>";
+            var body = "<!doctype html><html><head><meta charset=\"utf-8\"><title>Dream Launcher</title></head><body style=\"font-family:Segoe UI,Arial,sans-serif;background:#101311;color:#f0f3f1\">Discord login finished. You can return to Dream Launcher.</body></html>";
             var bodyBytes = Encoding.UTF8.GetBytes(body);
             var headerBytes = Encoding.UTF8.GetBytes(
                 $"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {bodyBytes.Length}\r\nConnection: close\r\n\r\n");
@@ -145,49 +164,6 @@ public sealed class DiscordAuthService
         {
             listener.Stop();
         }
-    }
-
-    private static async Task<DiscordTokenResponse> ExchangeCodeAsync(
-        LauncherSettings settings,
-        string code,
-        CancellationToken cancellationToken)
-    {
-        var form = new Dictionary<string, string>
-        {
-            ["client_id"] = settings.DiscordClientId,
-            ["client_secret"] = settings.DiscordClientSecret,
-            ["grant_type"] = "authorization_code",
-            ["code"] = code,
-            ["redirect_uri"] = settings.DiscordRedirectUri
-        };
-
-        using var response = await Http.PostAsync(TokenUrl, new FormUrlEncodedContent(form), cancellationToken);
-        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"Discord token exchange failed ({(int)response.StatusCode}): {raw}");
-        }
-
-        return JsonSerializer.Deserialize<DiscordTokenResponse>(raw, JsonOptions)
-            ?? throw new InvalidOperationException("Discord token response was empty.");
-    }
-
-    private static async Task<DiscordUserProfile> GetCurrentUserAsync(string accessToken, CancellationToken cancellationToken)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, CurrentUserUrl);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-        using var response = await Http.SendAsync(request, cancellationToken);
-        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new InvalidOperationException($"Discord user lookup failed ({(int)response.StatusCode}): {raw}");
-        }
-
-        return JsonSerializer.Deserialize<DiscordUserProfile>(raw, JsonOptions)
-            ?? throw new InvalidOperationException("Discord user response was empty.");
     }
 
     private static void OpenBrowser(string url)
@@ -210,24 +186,5 @@ public sealed class DiscordAuthService
             .ToDictionary(
                 parts => Uri.UnescapeDataString(parts[0]),
                 parts => Uri.UnescapeDataString(parts[1].Replace("+", " ")));
-    }
-
-    private static string BuildQuery(Dictionary<string, string> values)
-    {
-        return string.Join("&", values.Select(item =>
-            $"{Uri.EscapeDataString(item.Key)}={Uri.EscapeDataString(item.Value)}"));
-    }
-
-    private static string CreateBase64Url(int byteCount)
-    {
-        return Base64Url(RandomNumberGenerator.GetBytes(byteCount));
-    }
-
-    private static string Base64Url(byte[] bytes)
-    {
-        return Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
     }
 }

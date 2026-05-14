@@ -16,8 +16,8 @@ This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: a
 | Area | Status | Notes |
 | --- | --- | --- |
 | WPF app foundation | Done | .NET 8 WPF shell, left navigation, settings, services, local runtime files |
-| Discord authorization | Done | Browser OAuth callback through local loopback listener |
-| Dream backend identity | Done | Launcher requests a backend exchange code before game start |
+| Discord authorization | Done | Backend-owned OAuth with browser callback through local loopback listener |
+| Dream backend identity | Done | Launcher stores a short-lived Dream session and requests a backend exchange code before game start |
 | Local build library | Active | Existing folder import is ready; remote manifests are next |
 | Status surface | Active | Backend status endpoint is wired; richer UI grouping is next |
 | Downloads and repair | Queued | Needs official manifest format and content source |
@@ -30,7 +30,7 @@ This roadmap keeps Dream Launcher focused on a practical C# + WPF desktop app: a
 | P0 | Keep WPF build green | Launcher remains easy to iterate on |
 | P0 | Finish local environment setup | `dotnet`, MongoDB, backend, and VS tooling work from normal shells |
 | P1 | Expand status UI grouping | Launcher can show each backend service without relying on logs |
-| P1 | Harden account-link errors | User sees clear messages when Discord is not linked to a Dream account |
+| P1 | Harden backend auth errors | User sees clear messages when Discord OAuth or Dream session exchange fails |
 | P2 | Prepare build manifest schema | Future install, verify, and repair work has a stable data contract |
 
 ## Phase 0 - Repository And Environment
@@ -50,17 +50,17 @@ Goal: make the repository easy to clone, build, run, and continue.
 
 Goal: launch a selected local build only after a valid Discord-backed Dream session exists.
 
-- [x] Discord OAuth login in launcher.
+- [x] Backend-owned Discord OAuth login.
 - [x] Local loopback callback listener.
-- [x] Saved local Discord session.
-- [x] Backend endpoint that converts Discord login into a Dream exchange code.
+- [x] Saved local Dream launcher session.
+- [x] Backend endpoints that convert Discord login into a Dream launcher session and exchange code.
 - [x] Exchange-code placeholders in build launch arguments.
 - [x] Import an existing build folder from the UI.
 - [x] Validate required executable paths before launch.
 - [x] Track launch state: idle, launching, launched, closing.
 - [x] Close known Fortnite/Epic processes from the launcher.
 - [x] Show cleaner launch errors that users can report.
-- [ ] Add explicit "Discord account is not linked" state once backend returns a stable error code.
+- [ ] Add explicit backend-auth error states once the API returns stable user-facing codes.
 
 ## Phase 2 - Real Service Status
 

@@ -344,10 +344,7 @@
                                         <Border x:Name="DiscordAuthPill" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="12" Padding="9,5" Margin="0,0,0,10">
                                             <TextBlock x:Name="DiscordAuthTextBlock" Text="Discord: signed out" Foreground="{StaticResource MutedBrush}" />
                                         </Border>
-                                        <TextBlock Text="Discord client id" FontWeight="Bold" />
-                                        <TextBox x:Name="DiscordClientIdTextBox" Margin="0,5,0,8" />
-                                        <TextBlock Text="Discord client secret" FontWeight="Bold" />
-                                        <PasswordBox x:Name="DiscordClientSecretPasswordBox" Margin="0,5,0,8" />
+                                        <TextBlock Text="Discord login is handled by the backend. Set OAuth Client ID and Secret in backend .env." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
                                         <TextBlock Text="Callback port" FontWeight="Bold" />
                                         <TextBox x:Name="DiscordRedirectPortTextBox" Margin="0,5,0,10" Width="130" HorizontalAlignment="Left" />
                                         <StackPanel Orientation="Horizontal">

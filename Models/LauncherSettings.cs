@@ -20,8 +20,6 @@ public sealed class LauncherSettings
     public string BackendUrl { get; init; } = DefaultBackendUrl;
     public string GameServerHost { get; init; } = DefaultGameServerHost;
     public int GameServerPort { get; init; } = DefaultGameServerPort;
-    public string DiscordClientId { get; init; } = string.Empty;
-    public string DiscordClientSecret { get; init; } = string.Empty;
     public int DiscordRedirectPort { get; init; } = DefaultDiscordRedirectPort;
     public string DiscordScopes { get; init; } = "identify";
 
@@ -32,8 +30,6 @@ public sealed class LauncherSettings
         string? backendUrl,
         string? gameServerHost,
         string? gameServerPort,
-        string? discordClientId,
-        string? discordClientSecret,
         string? discordRedirectPort)
     {
         return new LauncherSettings
@@ -41,8 +37,6 @@ public sealed class LauncherSettings
             BackendUrl = NormalizeBackendUrl(backendUrl),
             GameServerHost = string.IsNullOrWhiteSpace(gameServerHost) ? Default.GameServerHost : gameServerHost.Trim(),
             GameServerPort = NormalizePort(gameServerPort, Default.GameServerPort),
-            DiscordClientId = string.IsNullOrWhiteSpace(discordClientId) ? string.Empty : discordClientId.Trim(),
-            DiscordClientSecret = string.IsNullOrWhiteSpace(discordClientSecret) ? string.Empty : discordClientSecret.Trim(),
             DiscordRedirectPort = NormalizePort(discordRedirectPort, Default.DiscordRedirectPort),
             DiscordScopes = "identify"
         };
@@ -60,8 +54,6 @@ public sealed class LauncherSettings
             BackendUrl = NormalizeBackendUrl(settings.BackendUrl),
             GameServerHost = string.IsNullOrWhiteSpace(settings.GameServerHost) ? Default.GameServerHost : settings.GameServerHost.Trim(),
             GameServerPort = settings.GameServerPort is > 0 and <= 65535 ? settings.GameServerPort : Default.GameServerPort,
-            DiscordClientId = string.IsNullOrWhiteSpace(settings.DiscordClientId) ? string.Empty : settings.DiscordClientId.Trim(),
-            DiscordClientSecret = string.IsNullOrWhiteSpace(settings.DiscordClientSecret) ? string.Empty : settings.DiscordClientSecret.Trim(),
             DiscordRedirectPort = settings.DiscordRedirectPort is > 0 and <= 65535 ? settings.DiscordRedirectPort : Default.DiscordRedirectPort,
             DiscordScopes = string.IsNullOrWhiteSpace(settings.DiscordScopes) ? "identify" : settings.DiscordScopes.Trim()
         };

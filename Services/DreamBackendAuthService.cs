@@ -24,7 +24,7 @@ public sealed class DreamBackendAuthService
         CancellationToken cancellationToken = default)
     {
         var endpoint = new Uri($"{settings.BackendUrl.TrimEnd('/')}/launcher/api/auth/discord/exchange");
-        var body = JsonSerializer.Serialize(new { access_token = session.AccessToken });
+        var body = JsonSerializer.Serialize(new { launcher_token = session.AccessToken });
 
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
