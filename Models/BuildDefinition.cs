@@ -11,6 +11,8 @@ public sealed class BuildDefinition
     public string Name { get; init; } = string.Empty;
     public string Path { get; init; } = string.Empty;
     public string Executable { get; init; } = DefaultExecutable;
+    public string? DllPath { get; init; }
+    public bool InjectDllOnLaunch { get; init; }
     public List<string> Arguments { get; init; } = [];
     public Dictionary<string, string> Env { get; init; } = [];
 
@@ -26,6 +28,22 @@ public sealed class BuildDefinition
 
     [JsonIgnore]
     public string ExecutableFileName => System.IO.Path.GetFileName(ResolvedExecutable);
+
+    [JsonIgnore]
+    public bool ShouldInjectDll => InjectDllOnLaunch && !string.IsNullOrWhiteSpace(DllPath);
+
+    [JsonIgnore]
+    public string? ResolvedDllPath =>
+        string.IsNullOrWhiteSpace(DllPath)
+            ? null
+            : System.IO.Path.IsPathRooted(DllPath)
+                ? DllPath
+                : System.IO.Path.GetFullPath(System.IO.Path.Combine(Path, DllPath));
+
+    [JsonIgnore]
+    public string DllFileName => ResolvedDllPath is null
+        ? "DLL not configured"
+        : System.IO.Path.GetFileName(ResolvedDllPath);
 
     public bool IsValid =>
         !string.IsNullOrWhiteSpace(Id) &&

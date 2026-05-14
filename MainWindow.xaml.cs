@@ -259,6 +259,78 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void SetBuildDll_Click(object sender, RoutedEventArgs e)
+    {
+        if (BuildsListBox.SelectedItem is not BuildDefinition build)
+        {
+            AddLog("Set DLL skipped: select a build first.");
+            ShowPage("Library");
+            return;
+        }
+
+        try
+        {
+            using var dialog = new Forms.OpenFileDialog
+            {
+                AddExtension = true,
+                CheckFileExists = true,
+                Filter = "DLL files (*.dll)|*.dll|All files (*.*)|*.*",
+                InitialDirectory = Directory.Exists(build.Path) ? build.Path : Environment.GetFolderPath(Environment.SpecialFolder.MyComputer),
+                Title = "Select runtime DLL for this build"
+            };
+
+            if (dialog.ShowDialog() != Forms.DialogResult.OK)
+            {
+                return;
+            }
+
+            var updated = await _buildManifestService.SetBuildDllAsync(build.Id, dialog.FileName);
+
+            if (updated is null)
+            {
+                AddLog("Set DLL skipped: build was not found in the manifest.");
+                return;
+            }
+
+            await LoadBuildsAsync();
+            BuildsListBox.SelectedItem = _builds.FirstOrDefault(item => item.Id == updated.Id);
+            AddLog($"DLL injection enabled for {updated.Name}: {updated.ResolvedDllPath}");
+        }
+        catch (Exception ex)
+        {
+            AddError("Set DLL", ex);
+        }
+    }
+
+    private async void ClearBuildDll_Click(object sender, RoutedEventArgs e)
+    {
+        if (BuildsListBox.SelectedItem is not BuildDefinition build)
+        {
+            AddLog("Clear DLL skipped: select a build first.");
+            ShowPage("Library");
+            return;
+        }
+
+        try
+        {
+            var updated = await _buildManifestService.ClearBuildDllAsync(build.Id);
+
+            if (updated is null)
+            {
+                AddLog("Clear DLL skipped: build was not found in the manifest.");
+                return;
+            }
+
+            await LoadBuildsAsync();
+            BuildsListBox.SelectedItem = _builds.FirstOrDefault(item => item.Id == updated.Id);
+            AddLog($"DLL injection disabled for {updated.Name}.");
+        }
+        catch (Exception ex)
+        {
+            AddError("Clear DLL", ex);
+        }
+    }
+
     private void BuildsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateLaunchButton();
@@ -426,8 +498,18 @@ public partial class MainWindow : Window
                 AddLog("Build arguments do not contain {exchangeCode}; game auth args may be missing.");
             }
 
-            var executable = _launchService.Launch(build, context);
-            AddLog($"Launched {executable}");
+            var launch = _launchService.Launch(build, context);
+            AddLog($"Launched {launch.Executable} (PID {launch.ProcessId})");
+
+            if (!string.IsNullOrWhiteSpace(launch.InjectedDll))
+            {
+                AddLog($"Injected DLL: {launch.InjectedDll}");
+            }
+            else
+            {
+                AddLog("DLL injection skipped: not enabled for this build.");
+            }
+
             SetLaunchState(LaunchState.Launched);
         }
         catch (Exception ex)
@@ -702,6 +784,9 @@ public partial class MainWindow : Window
             DownloadsSelectedBuildText.Text = build.Name;
             LibrarySelectedBuildNameText.Text = $"Selected build: {build.Name}";
             LibrarySelectedExecutableText.Text = $"Executable: {build.ResolvedExecutable}";
+            LibrarySelectedDllText.Text = build.ShouldInjectDll
+                ? $"DLL: {build.ResolvedDllPath}"
+                : "DLL: not enabled for this build";
             LibrarySelectedPathText.Text = $"Folder: {build.Path}";
         }
         else
@@ -711,6 +796,7 @@ public partial class MainWindow : Window
             DownloadsSelectedBuildText.Text = "No build selected";
             LibrarySelectedBuildNameText.Text = "Selected build: none";
             LibrarySelectedExecutableText.Text = "Executable: no build selected";
+            LibrarySelectedDllText.Text = "DLL: not configured";
             LibrarySelectedPathText.Text = "Folder: no build selected";
         }
 
@@ -782,6 +868,8 @@ public partial class MainWindow : Window
             report.AppendLine($"Selected build: {selectedBuild.Name}");
             report.AppendLine($"Build path: {selectedBuild.Path}");
             report.AppendLine($"Build executable: {LaunchService.ResolveExecutable(selectedBuild)}");
+            report.AppendLine($"DLL injection enabled: {selectedBuild.ShouldInjectDll}");
+            report.AppendLine($"Build DLL: {selectedBuild.ResolvedDllPath ?? "not configured"}");
         }
 
         report.AppendLine();

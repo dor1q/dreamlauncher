@@ -10,9 +10,9 @@ Dream Launcher is a C# + WPF desktop launcher for the Dream project. It is focus
 | Authentication | Startup login gate with browser Discord OAuth through the Dream backend |
 | Backend identity | Dream launcher session exchange through the Dream backend |
 | Backend status | Reads `/launcher/api/status` and logs service-level health |
-| Local library | Build manifest, existing folder import, and build verification |
+| Local library | Build manifest, exe/folder import, optional DLL setup, and build verification |
 | Downloads | Content directory setting plus Downloads page for install/verify workflow |
-| Launch flow | Executable validation, exchange-code placeholders, process start |
+| Launch flow | Executable validation, exchange-code placeholders, process start, optional configured DLL injection |
 | Runtime control | Launch state, known process close action, runtime log |
 | Diagnostics | Exportable report without saved tokens or secrets |
 
@@ -92,6 +92,8 @@ Example build entry:
   "name": "Season 5 Local",
   "path": "D:\\Games\\Dream\\Season5",
   "executable": "FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe",
+  "dllPath": "",
+  "injectDllOnLaunch": false,
   "arguments": [
     "-AUTH_LOGIN=unused",
     "-AUTH_PASSWORD={exchangeCode}",
@@ -110,14 +112,17 @@ Supported launch argument placeholders:
 | `{displayName}` | Account display name |
 | `{discordId}` | Discord user id |
 
+DLL injection is optional and per-build. Set `dllPath` and `injectDllOnLaunch: true` only for builds that require a local runtime DLL. If the field is empty or disabled, the launcher starts the game without DLL injection.
+
 ## Downloads And Verify
 
 The Downloads page currently supports the local build-management flow:
 
-1. import an existing build folder;
+1. import an existing build folder or select `FortniteClient-Win64-Shipping.exe`;
 2. select it in Library;
-3. run Verify selected;
-4. open the build folder or manifest when something needs fixing.
+3. optionally set a runtime DLL for that build;
+4. run Verify selected;
+5. open the build folder or manifest when something needs fixing.
 
 Remote downloads are intentionally gated behind a future official build manifest and content source.
 

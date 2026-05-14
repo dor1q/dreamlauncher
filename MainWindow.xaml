@@ -214,36 +214,40 @@
 
                     <Grid x:Name="LibraryPage" Visibility="Collapsed">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="156" />
+                            <RowDefinition Height="178" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
-                                <RowDefinition Height="66" />
+                                <RowDefinition Height="86" />
                             </Grid.RowDefinitions>
                             <StackPanel>
                                 <TextBlock Text="Library" FontSize="22" FontWeight="Black" />
                                 <TextBlock Text="Select a local build, inspect its executable, then launch when account and backend are ready." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                            <WrapPanel Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom">
                                 <Button Content="Add exe" Click="AddBuildExecutable_Click" />
                                 <Button Content="Add folder" Margin="8,0,0,0" Click="AddBuildFolder_Click" />
+                                <Button Content="Set DLL" Margin="8,0,0,0" Click="SetBuildDll_Click" />
+                                <Button Content="Clear DLL" Margin="8,0,0,0" Click="ClearBuildDll_Click" />
                                 <Button Content="Remove" Margin="8,0,0,0" Click="RemoveSelectedBuild_Click" />
                                 <Button Content="Open folder" Margin="8,0,0,0" Click="OpenBuildFolder_Click" />
                                 <Button Content="Open manifest" Margin="8,0,0,0" Click="OpenManifest_Click" />
-                            </StackPanel>
+                            </WrapPanel>
                             <Border Grid.Row="2" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="10,7" Margin="0,8,0,0">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <TextBlock x:Name="LibrarySelectedBuildNameText" Text="Selected build: none" FontWeight="Black" TextTrimming="CharacterEllipsis" />
                                     <TextBlock x:Name="LibrarySelectedExecutableText" Grid.Row="1" Text="Executable: no build selected" Foreground="{StaticResource AccentBrush}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock x:Name="LibrarySelectedPathText" Grid.Row="2" Text="Folder: no build selected" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="LibrarySelectedDllText" Grid.Row="2" Text="DLL: not configured" Foreground="{StaticResource YellowBrush}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="LibrarySelectedPathText" Grid.Row="3" Text="Folder: no build selected" Foreground="{StaticResource MutedBrush}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                 </Grid>
                             </Border>
                         </Grid>
@@ -303,6 +307,7 @@
                                                     <TextBlock Text="{Binding Name}" FontWeight="Black" FontSize="14" TextTrimming="CharacterEllipsis" />
                                                     <TextBlock Text="{Binding Path}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextTrimming="CharacterEllipsis" />
                                                     <TextBlock Text="{Binding ResolvedExecutable}" Foreground="{StaticResource AccentBrush}" FontSize="10" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
+                                                    <TextBlock Text="{Binding DllFileName}" Foreground="{StaticResource YellowBrush}" FontSize="10" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
                                                 </StackPanel>
                                             </Border>
                                         </Grid>
@@ -323,12 +328,13 @@
                                 <TextBlock Text="Downloads" FontSize="22" FontWeight="Black" />
                                 <TextBlock Text="Manage local builds, verify required files, and prepare installs from the content directory." Foreground="{StaticResource MutedBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                            <WrapPanel HorizontalAlignment="Right" VerticalAlignment="Bottom">
                                 <Button Content="Add exe" Click="AddBuildExecutable_Click" />
                                 <Button Content="Add folder" Margin="8,0,0,0" Click="AddBuildFolder_Click" />
+                                <Button Content="Set DLL" Margin="8,0,0,0" Click="SetBuildDll_Click" />
                                 <Button Content="Verify selected" Margin="8,0,0,0" Click="VerifySelectedBuild_Click" />
                                 <Button Content="Open folder" Margin="8,0,0,0" Click="OpenBuildFolder_Click" />
-                            </StackPanel>
+                            </WrapPanel>
                         </Grid>
 
                         <Border Grid.Row="1" Background="#101311" BorderBrush="{StaticResource BorderBrushColor}" BorderThickness="1" CornerRadius="5" Padding="12">

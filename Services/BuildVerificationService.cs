@@ -11,6 +11,8 @@ public sealed class BuildVerificationService
         var rootExists = Directory.Exists(build.Path);
         var executablePath = ResolveExecutable(build);
         var executableExists = File.Exists(executablePath);
+        var dllPath = build.ResolvedDllPath;
+        var dllExists = dllPath is not null && File.Exists(dllPath);
         var fortniteGamePath = Path.Combine(build.Path, "FortniteGame");
         var binariesPath = Path.Combine(build.Path, "FortniteGame", "Binaries", "Win64");
         var enginePath = Path.Combine(build.Path, "Engine");
@@ -32,6 +34,16 @@ public sealed class BuildVerificationService
         items.Add(CheckDirectory("FortniteGame folder", fortniteGamePath, required: true));
         items.Add(CheckDirectory("Win64 binaries", binariesPath, required: true));
         items.Add(CheckDirectory("Engine folder", enginePath, required: false));
+        items.Add(new BuildVerificationItem
+        {
+            Title = "Runtime DLL",
+            State = build.ShouldInjectDll
+                ? dllExists ? "OK" : "Missing"
+                : "Skipped",
+            Details = build.ShouldInjectDll
+                ? dllExists ? dllPath! : $"Expected DLL: {dllPath}"
+                : "DLL injection is not enabled for this build."
+        });
 
         items.Add(new BuildVerificationItem
         {
@@ -42,7 +54,7 @@ public sealed class BuildVerificationService
                 : "Launch may fail unless the build manifest includes {exchangeCode}."
         });
 
-        var canLaunch = rootExists && executableExists;
+        var canLaunch = rootExists && executableExists && (!build.ShouldInjectDll || dllExists);
 
         return new BuildVerificationResult
         {

@@ -6,6 +6,8 @@ namespace DreamLauncher.Services;
 
 public sealed class LaunchService
 {
+    private readonly DllInjectionService _dllInjectionService = new();
+
     private static readonly string[] GameProcesses =
     [
         "FortniteClient-Win64-Shipping_BE",
@@ -15,7 +17,7 @@ public sealed class LaunchService
         "FortniteLauncher"
     ];
 
-    public string Launch(BuildDefinition build, LaunchContext context)
+    public LaunchResult Launch(BuildDefinition build, LaunchContext context)
     {
         var executable = ResolveExecutable(build);
 
@@ -41,8 +43,25 @@ public sealed class LaunchService
             info.Environment[item.Key] = item.Value;
         }
 
-        Process.Start(info);
-        return executable;
+        var process = Process.Start(info)
+            ?? throw new InvalidOperationException("Game process could not be started.");
+        string? injectedDll = null;
+
+        if (build.ShouldInjectDll)
+        {
+            var dllPath = build.ResolvedDllPath
+                ?? throw new InvalidOperationException("DLL injection is enabled, but DLL path is empty.");
+
+            _dllInjectionService.Inject(process, dllPath);
+            injectedDll = dllPath;
+        }
+
+        return new LaunchResult
+        {
+            Executable = executable,
+            ProcessId = process.Id,
+            InjectedDll = injectedDll
+        };
     }
 
     public int CloseGameProcesses()

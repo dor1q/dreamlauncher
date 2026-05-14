@@ -132,6 +132,60 @@ public sealed class BuildManifestService
         return removed;
     }
 
+    public async Task<BuildDefinition?> SetBuildDllAsync(string buildId, string dllPath)
+    {
+        if (string.IsNullOrWhiteSpace(buildId) || string.IsNullOrWhiteSpace(dllPath))
+        {
+            return null;
+        }
+
+        var fullDllPath = Path.GetFullPath(dllPath);
+
+        if (!File.Exists(fullDllPath))
+        {
+            throw new FileNotFoundException("DLL file was not found.", fullDllPath);
+        }
+
+        var manifest = await LoadAsync();
+        var index = manifest.Builds.FindIndex(build =>
+            string.Equals(build.Id, buildId, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var build = manifest.Builds[index];
+        var updated = CopyBuild(build, dllPath: MakePathRelativeToBuild(build, fullDllPath), injectDllOnLaunch: true);
+        manifest.Builds[index] = updated;
+
+        await SaveAsync(manifest);
+        return updated;
+    }
+
+    public async Task<BuildDefinition?> ClearBuildDllAsync(string buildId)
+    {
+        if (string.IsNullOrWhiteSpace(buildId))
+        {
+            return null;
+        }
+
+        var manifest = await LoadAsync();
+        var index = manifest.Builds.FindIndex(build =>
+            string.Equals(build.Id, buildId, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var updated = CopyBuild(manifest.Builds[index], dllPath: null, injectDllOnLaunch: false);
+        manifest.Builds[index] = updated;
+
+        await SaveAsync(manifest);
+        return updated;
+    }
+
     private static string ResolveAppRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -163,6 +217,32 @@ public sealed class BuildManifestService
         }
 
         return $"{cleaned}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}";
+    }
+
+    private static BuildDefinition CopyBuild(BuildDefinition build, string? dllPath, bool injectDllOnLaunch)
+    {
+        return new BuildDefinition
+        {
+            Id = build.Id,
+            Name = build.Name,
+            Path = build.Path,
+            Executable = build.Executable,
+            DllPath = dllPath,
+            InjectDllOnLaunch = injectDllOnLaunch,
+            Arguments = [.. build.Arguments],
+            Env = new Dictionary<string, string>(build.Env, StringComparer.OrdinalIgnoreCase)
+        };
+    }
+
+    private static string MakePathRelativeToBuild(BuildDefinition build, string fullPath)
+    {
+        var root = Path.GetFullPath(build.Path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var normalized = Path.GetFullPath(fullPath);
+        var rootWithSeparator = root + Path.DirectorySeparatorChar;
+
+        return normalized.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase)
+            ? Path.GetRelativePath(root, normalized)
+            : normalized;
     }
 
     private static string ResolveBuildRootFromExecutable(string executablePath)

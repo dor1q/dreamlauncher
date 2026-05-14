@@ -56,7 +56,9 @@ Goal: launch a selected local build only after a valid Discord-backed Dream sess
 - [x] Backend endpoints that convert Discord login into a Dream launcher session and exchange code.
 - [x] Exchange-code placeholders in build launch arguments.
 - [x] Import an existing build folder from the UI.
+- [x] Import a build by selecting `FortniteClient-Win64-Shipping.exe`.
 - [x] Validate required executable paths before launch.
+- [x] Configure optional per-build runtime DLL injection.
 - [x] Track launch state: idle, launching, launched, closing.
 - [x] Close known Fortnite/Epic processes from the launcher.
 - [x] Show cleaner launch errors that users can report.
@@ -93,6 +95,7 @@ Goal: let the launcher manage game builds instead of only launching manually imp
 Goal: keep useful controls visible without turning settings into a dumping ground.
 
 - [ ] Add custom launch arguments.
+- [ ] Add downloadable official DLL/build metadata after the backend manifest is finalized.
 - [ ] Add compact/list library layout preference.
 - [ ] Add theme basics.
 - [ ] Add account sign-out and session refresh.
