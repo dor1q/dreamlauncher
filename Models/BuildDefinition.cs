@@ -6,6 +6,8 @@ namespace DreamLauncher.Models;
 public sealed class BuildDefinition
 {
     public const string DefaultExecutable = "FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe";
+    public const string DefaultRuntimeDll = "D:\\ProjectDream\\Project-Reboot-3.0-master\\x64\\Release\\Project Reboot 3.0.dll";
+    public static readonly string DefaultExecutableFileName = System.IO.Path.GetFileName(DefaultExecutable);
 
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
