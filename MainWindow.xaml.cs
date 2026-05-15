@@ -42,6 +42,10 @@ public partial class MainWindow : Window
     private bool _discordLoginInProgress;
     private string? _authGateMessage;
     private int _avatarRequestVersion;
+    private readonly string _avatarCacheDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "Dream Launcher",
+        "avatars");
 
     public MainWindow()
     {
@@ -63,6 +67,7 @@ public partial class MainWindow : Window
         await LoadDiscordSessionAsync();
         await LoadBuildsAsync();
         AddLog("Launcher loaded.");
+        await CheckStatusAsync(showLog: false);
     }
 
     private async Task LoadSettingsAsync()
@@ -165,7 +170,7 @@ public partial class MainWindow : Window
         await CheckStatusAsync();
     }
 
-    private async Task CheckStatusAsync()
+    private async Task CheckStatusAsync(bool showLog = true)
     {
         try
         {
@@ -174,17 +179,20 @@ public partial class MainWindow : Window
             SetStatus(BackendStatusPill, BackendStatusText, "Backend", ServiceCheckResult.NotChecked);
             SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", ServiceCheckResult.NotChecked);
 
-            var backendTask = _statusService.CheckBackendAsync(_settings.BackendUrl);
-            var gameServerTask = _statusService.CheckTcpAsync(_settings.GameServerHost, _settings.GameServerPort);
+            var backend = await _statusService.CheckBackendAsync(_settings.BackendUrl);
+            var gameServer = _statusService.GetGameServerFromBackendStatus(backend)
+                ?? await _statusService.CheckTcpAsync(_settings.GameServerHost, _settings.GameServerPort);
 
-            await Task.WhenAll(backendTask, gameServerTask);
+            SetStatus(BackendStatusPill, BackendStatusText, "Backend", backend);
+            SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", gameServer);
+            UpdateBackendServices(backend);
+            UpdateHomeStatusSummary(backend, gameServer);
+            AddStatusSummary("Backend services", backend);
 
-            SetStatus(BackendStatusPill, BackendStatusText, "Backend", backendTask.Result);
-            SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", gameServerTask.Result);
-            UpdateBackendServices(backendTask.Result);
-            UpdateHomeStatusSummary(backendTask.Result, gameServerTask.Result);
-            AddStatusSummary("Backend services", backendTask.Result);
-            AddLog("Status checked.");
+            if (showLog)
+            {
+                AddLog("Status checked.");
+            }
         }
         catch (Exception ex)
         {
@@ -404,16 +412,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var result = _buildVerificationService.Verify(build);
-            _verificationResults.Clear();
-
-            foreach (var item in result.Items)
-            {
-                _verificationResults.Add(item);
-            }
-
-            DownloadStatusText.Text = result.Summary;
-            DownloadProgressBar.Value = result.CanLaunch ? 100 : 45;
+            var result = ShowBuildVerificationResult(_buildVerificationService.Verify(build));
             AddLog($"Verify: {result.Summary}");
             ShowPage("Downloads");
         }
@@ -476,6 +475,34 @@ public partial class MainWindow : Window
             SetLaunchState(LaunchState.Launching);
             LaunchButton.IsEnabled = false;
             _settings = ReadSettingsFromInputs();
+            SetLaunchMessage("Checking selected build.", isError: false);
+
+            var verification = ShowBuildVerificationResult(_buildVerificationService.Verify(build));
+
+            if (!verification.CanLaunch)
+            {
+                throw new InvalidOperationException(verification.Summary);
+            }
+
+            SetLaunchMessage("Checking backend and game server.", isError: false);
+            var backend = await _statusService.CheckBackendAsync(_settings.BackendUrl);
+            var gameServer = _statusService.GetGameServerFromBackendStatus(backend)
+                ?? await _statusService.CheckTcpAsync(_settings.GameServerHost, _settings.GameServerPort);
+
+            SetStatus(BackendStatusPill, BackendStatusText, "Backend", backend);
+            SetStatus(GameServerStatusPill, GameServerStatusText, "Game server", gameServer);
+            UpdateBackendServices(backend);
+            UpdateHomeStatusSummary(backend, gameServer);
+
+            if (backend.State != ServiceState.Online)
+            {
+                throw new InvalidOperationException($"Backend is offline: {backend.Error ?? backend.Summary ?? "no details"}.");
+            }
+
+            if (gameServer.State != ServiceState.Online)
+            {
+                throw new InvalidOperationException($"Game server is offline: {gameServer.Error ?? gameServer.Summary ?? "no details"}.");
+            }
 
             if (_launchService.IsGameRunning())
             {
@@ -498,16 +525,29 @@ public partial class MainWindow : Window
                 AddLog("Build arguments do not contain {exchangeCode}; game auth args may be missing.");
             }
 
-            var launch = _launchService.Launch(build, context);
+            SetLaunchMessage("Starting game process.", isError: false);
+            var launch = await Task.Run(() => _launchService.Launch(build, context));
             AddLog($"Launched {launch.Executable} (PID {launch.ProcessId})");
+
+            if (launch.ClosedProcessesBeforeLaunch > 0)
+            {
+                AddLog($"Closed stale game process(es): {launch.ClosedProcessesBeforeLaunch}");
+            }
+
+            if (launch.StartedBootstrapProcesses.Count > 0)
+            {
+                AddLog($"Started bootstrap process(es): {string.Join(", ", launch.StartedBootstrapProcesses)}");
+            }
 
             if (!string.IsNullOrWhiteSpace(launch.InjectedDll))
             {
                 AddLog($"Injected DLL: {launch.InjectedDll}");
+                SetLaunchMessage($"Game started. DLL injected: {Path.GetFileName(launch.InjectedDll)}", isError: false);
             }
             else
             {
                 AddLog("DLL injection skipped: not enabled for this build.");
+                SetLaunchMessage("Game started. DLL injection is disabled for this build.", isError: false);
             }
 
             SetLaunchState(LaunchState.Launched);
@@ -515,7 +555,19 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             SetLaunchState(LaunchState.Error);
+            var message = FriendlyError(ex);
+            SetLaunchMessage(message, isError: true);
             AddError("Launch", ex);
+
+            if (IsInvalidLauncherToken(ex))
+            {
+                await _discordSessionService.ClearAsync();
+                _discordSession = null;
+                _authGateMessage = message;
+                UpdateDiscordAuthUi();
+            }
+
+            ShowLaunchError(message);
         }
         finally
         {
@@ -736,6 +788,21 @@ public partial class MainWindow : Window
         AddLog($"{area} error: {FriendlyError(ex)}");
     }
 
+    private BuildVerificationResult ShowBuildVerificationResult(BuildVerificationResult result)
+    {
+        _verificationResults.Clear();
+
+        foreach (var item in result.Items)
+        {
+            _verificationResults.Add(item);
+        }
+
+        DownloadStatusText.Text = result.Summary;
+        DownloadProgressBar.Value = result.CanLaunch ? 100 : 45;
+
+        return result;
+    }
+
     private void SetLaunchState(LaunchState state)
     {
         _launchState = state;
@@ -771,6 +838,23 @@ public partial class MainWindow : Window
         };
 
         UpdateLaunchButton();
+    }
+
+    private void SetLaunchMessage(string message, bool isError)
+    {
+        LaunchMessageText.Text = message;
+        LaunchMessageText.Foreground = isError
+            ? (MediaBrush)FindResource("DangerBrush")
+            : (MediaBrush)FindResource("MutedBrush");
+    }
+
+    private static void ShowLaunchError(string message)
+    {
+        System.Windows.MessageBox.Show(
+            message,
+            "Launch failed",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
     }
 
     private void UpdateBuildSummary()
@@ -905,6 +989,12 @@ public partial class MainWindow : Window
         };
     }
 
+    private static bool IsInvalidLauncherToken(Exception ex)
+    {
+        return ex is InvalidOperationException invalid &&
+            invalid.Message.Contains("invalid_launcher_token", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void SetStatus(Border pill, TextBlock text, string label, ServiceCheckResult result)
     {
         var muted = (MediaBrush)FindResource("MutedBrush");
@@ -974,34 +1064,88 @@ public partial class MainWindow : Window
             using var response = await AvatarHttp.SendAsync(request);
             response.EnsureSuccessStatusCode();
             var bytes = await response.Content.ReadAsByteArrayAsync();
-
-            await using var stream = new MemoryStream(bytes);
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-            bitmap.StreamSource = stream;
-            bitmap.EndInit();
-            bitmap.Freeze();
+            CacheAvatar(_discordSession.User, bytes);
+            var bitmap = LoadBitmap(bytes);
 
             if (requestVersion != _avatarRequestVersion)
             {
                 return;
             }
 
-            HomeAvatarEllipse.Fill = new ImageBrush(bitmap)
-            {
-                Stretch = Stretch.UniformToFill
-            };
-            HomeAvatarFallbackText.Visibility = Visibility.Collapsed;
+            SetHomeAvatar(bitmap);
         }
-        catch
+        catch (Exception ex)
         {
             if (requestVersion == _avatarRequestVersion)
             {
+                if (TryLoadCachedAvatar(_discordSession.User, out var cachedBitmap))
+                {
+                    SetHomeAvatar(cachedBitmap);
+                    return;
+                }
+
                 SetDefaultHomeAvatar(displayName);
+                AddLog($"Discord avatar load failed: {FriendlyError(ex)}");
             }
         }
+    }
+
+    private void SetHomeAvatar(BitmapImage bitmap)
+    {
+        HomeAvatarEllipse.Fill = new ImageBrush(bitmap)
+        {
+            Stretch = Stretch.UniformToFill,
+            AlignmentX = AlignmentX.Center,
+            AlignmentY = AlignmentY.Center
+        };
+        HomeAvatarFallbackText.Visibility = Visibility.Collapsed;
+    }
+
+    private static BitmapImage LoadBitmap(byte[] bytes)
+    {
+        using var stream = new MemoryStream(bytes);
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+        bitmap.StreamSource = stream;
+        bitmap.EndInit();
+        bitmap.Freeze();
+        return bitmap;
+    }
+
+    private void CacheAvatar(DiscordUserProfile user, byte[] bytes)
+    {
+        Directory.CreateDirectory(_avatarCacheDirectory);
+        File.WriteAllBytes(GetAvatarCachePath(user), bytes);
+    }
+
+    private bool TryLoadCachedAvatar(DiscordUserProfile user, out BitmapImage bitmap)
+    {
+        var path = GetAvatarCachePath(user);
+
+        if (File.Exists(path))
+        {
+            bitmap = LoadBitmap(File.ReadAllBytes(path));
+            return true;
+        }
+
+        bitmap = new BitmapImage();
+        return false;
+    }
+
+    private string GetAvatarCachePath(DiscordUserProfile user)
+    {
+        var avatarKey = string.IsNullOrWhiteSpace(user.Avatar) ? "default" : user.Avatar;
+        var fileName = $"{SanitizeFileName(user.Id)}-{SanitizeFileName(avatarKey)}.png";
+        return Path.Combine(_avatarCacheDirectory, fileName);
+    }
+
+    private static string SanitizeFileName(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
+        return string.IsNullOrWhiteSpace(cleaned) ? "avatar" : cleaned;
     }
 
     private void SetDefaultHomeAvatar(string displayName)

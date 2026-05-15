@@ -11,6 +11,9 @@ config/builds.json
 settings.json
 discord-session.json
 dream-launcher-report-*.txt
+manual-release/
+publish/
+release-artifacts/
 *.log
 
 # OS files

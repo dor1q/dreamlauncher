@@ -96,6 +96,29 @@ public sealed class StatusService
         }
     }
 
+    public ServiceCheckResult? GetGameServerFromBackendStatus(ServiceCheckResult backend)
+    {
+        var service = backend.BackendStatus?.Services.FirstOrDefault(item =>
+            item.Id.Equals("xmpp", StringComparison.OrdinalIgnoreCase) ||
+            item.Id.Equals("matchmaker", StringComparison.OrdinalIgnoreCase));
+
+        if (service is null)
+        {
+            return null;
+        }
+
+        var online = service.State.Equals("online", StringComparison.OrdinalIgnoreCase);
+        var portSuffix = service.Port is null ? string.Empty : $" on port {service.Port}";
+
+        return new ServiceCheckResult
+        {
+            State = online ? ServiceState.Online : ServiceState.Offline,
+            LatencyMs = backend.LatencyMs,
+            Summary = $"{service.Label}: {service.State}{portSuffix}",
+            Error = online ? null : service.Details ?? service.State
+        };
+    }
+
     private static LauncherStatusResponse? TryReadStatus(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))

@@ -238,6 +238,9 @@ public sealed class BuildManifestService
             Executable = build.Executable,
             DllPath = dllPath,
             InjectDllOnLaunch = injectDllOnLaunch,
+            DllInjectionDelayMs = build.DllInjectionDelayMs,
+            StartBootstrapProcesses = build.StartBootstrapProcesses,
+            CloseProcessesBeforeLaunch = build.CloseProcessesBeforeLaunch,
             Arguments = [.. build.Arguments],
             Env = new Dictionary<string, string>(build.Env, StringComparer.OrdinalIgnoreCase)
         };

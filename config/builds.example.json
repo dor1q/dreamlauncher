@@ -7,7 +7,18 @@
       "executable": "FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe",
       "dllPath": "D:\\ProjectDream\\Project-Reboot-3.0-master\\x64\\Release\\Project Reboot 3.0.dll",
       "injectDllOnLaunch": true,
+      "dllInjectionDelayMs": 1500,
+      "startBootstrapProcesses": true,
+      "closeProcessesBeforeLaunch": true,
       "arguments": [
+        "-epicapp=Fortnite",
+        "-epiclocale=en-us",
+        "-epicportal",
+        "-nobe",
+        "-fromfl=eac",
+        "-fltoken=hchc0906bb1bg83c3934fa31",
+        "-skippatchcheck",
+        "-noeac",
         "-AUTH_LOGIN=unused",
         "-AUTH_PASSWORD={exchangeCode}",
         "-AUTH_TYPE=exchangecode"

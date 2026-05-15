@@ -15,6 +15,9 @@ public sealed class BuildDefinition
     public string Executable { get; init; } = DefaultExecutable;
     public string? DllPath { get; init; }
     public bool InjectDllOnLaunch { get; init; }
+    public int DllInjectionDelayMs { get; init; } = 1500;
+    public bool StartBootstrapProcesses { get; init; } = true;
+    public bool CloseProcessesBeforeLaunch { get; init; } = true;
     public List<string> Arguments { get; init; } = [];
     public Dictionary<string, string> Env { get; init; } = [];
 
@@ -55,6 +58,14 @@ public sealed class BuildDefinition
 
     public static List<string> DefaultArguments() =>
         [
+            "-epicapp=Fortnite",
+            "-epiclocale=en-us",
+            "-epicportal",
+            "-nobe",
+            "-fromfl=eac",
+            "-fltoken=hchc0906bb1bg83c3934fa31",
+            "-skippatchcheck",
+            "-noeac",
             "-AUTH_LOGIN=unused",
             "-AUTH_PASSWORD={exchangeCode}",
             "-AUTH_TYPE=exchangecode"

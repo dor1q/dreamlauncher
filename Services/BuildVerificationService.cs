@@ -16,6 +16,8 @@ public sealed class BuildVerificationService
         var fortniteGamePath = Path.Combine(build.Path, "FortniteGame");
         var binariesPath = Path.Combine(build.Path, "FortniteGame", "Binaries", "Win64");
         var enginePath = Path.Combine(build.Path, "Engine");
+        var fortniteLauncherPath = Path.Combine(binariesPath, "FortniteLauncher.exe");
+        var fortniteEacPath = Path.Combine(binariesPath, "FortniteClient-Win64-Shipping_EAC.exe");
 
         items.Add(new BuildVerificationItem
         {
@@ -34,6 +36,22 @@ public sealed class BuildVerificationService
         items.Add(CheckDirectory("FortniteGame folder", fortniteGamePath, required: true));
         items.Add(CheckDirectory("Win64 binaries", binariesPath, required: true));
         items.Add(CheckDirectory("Engine folder", enginePath, required: false));
+        items.Add(new BuildVerificationItem
+        {
+            Title = "Fortnite launcher",
+            State = File.Exists(fortniteLauncherPath) ? "OK" : "Warning",
+            Details = File.Exists(fortniteLauncherPath)
+                ? fortniteLauncherPath
+                : $"Optional bootstrap process was not found: {fortniteLauncherPath}"
+        });
+        items.Add(new BuildVerificationItem
+        {
+            Title = "EAC bootstrap",
+            State = File.Exists(fortniteEacPath) ? "OK" : "Warning",
+            Details = File.Exists(fortniteEacPath)
+                ? fortniteEacPath
+                : $"Optional bootstrap process was not found: {fortniteEacPath}"
+        });
         items.Add(new BuildVerificationItem
         {
             Title = "Runtime DLL",
