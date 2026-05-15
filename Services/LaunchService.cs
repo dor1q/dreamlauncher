@@ -26,6 +26,11 @@ public sealed class LaunchService
             throw new FileNotFoundException("Executable not found", executable);
         }
 
+        if (!string.Equals(Path.GetFileName(executable), BuildDefinition.DefaultExecutableFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Launch blocked: select {BuildDefinition.DefaultExecutableFileName}, not another launcher executable.");
+        }
+
         var info = new ProcessStartInfo
         {
             FileName = executable,

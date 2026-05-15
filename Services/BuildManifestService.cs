@@ -66,6 +66,8 @@ public sealed class BuildManifestService
             Name = string.IsNullOrWhiteSpace(folderName) ? "Imported Build" : folderName,
             Path = fullRoot,
             Executable = BuildDefinition.DefaultExecutable,
+            DllPath = ResolveDefaultRuntimeDllPath(),
+            InjectDllOnLaunch = File.Exists(BuildDefinition.DefaultRuntimeDll),
             Arguments = BuildDefinition.DefaultArguments()
         };
 
@@ -91,6 +93,11 @@ public sealed class BuildManifestService
             throw new FileNotFoundException("Build executable was not found.", fullExecutable);
         }
 
+        if (!string.Equals(Path.GetFileName(fullExecutable), BuildDefinition.DefaultExecutableFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Select {BuildDefinition.DefaultExecutableFileName}, not another launcher executable.");
+        }
+
         var fullRoot = ResolveBuildRootFromExecutable(fullExecutable);
         var relativeExecutable = Path.GetRelativePath(fullRoot, fullExecutable);
         var folderName = new DirectoryInfo(fullRoot).Name;
@@ -100,6 +107,8 @@ public sealed class BuildManifestService
             Name = string.IsNullOrWhiteSpace(folderName) ? Path.GetFileNameWithoutExtension(fullExecutable) : folderName,
             Path = fullRoot,
             Executable = relativeExecutable,
+            DllPath = ResolveDefaultRuntimeDllPath(),
+            InjectDllOnLaunch = File.Exists(BuildDefinition.DefaultRuntimeDll),
             Arguments = BuildDefinition.DefaultArguments()
         };
 
@@ -232,6 +241,13 @@ public sealed class BuildManifestService
             Arguments = [.. build.Arguments],
             Env = new Dictionary<string, string>(build.Env, StringComparer.OrdinalIgnoreCase)
         };
+    }
+
+    private static string? ResolveDefaultRuntimeDllPath()
+    {
+        return File.Exists(BuildDefinition.DefaultRuntimeDll)
+            ? BuildDefinition.DefaultRuntimeDll
+            : null;
     }
 
     private static string MakePathRelativeToBuild(BuildDefinition build, string fullPath)

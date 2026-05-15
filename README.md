@@ -92,8 +92,8 @@ Example build entry:
   "name": "Season 5 Local",
   "path": "D:\\Games\\Dream\\Season5",
   "executable": "FortniteGame\\Binaries\\Win64\\FortniteClient-Win64-Shipping.exe",
-  "dllPath": "",
-  "injectDllOnLaunch": false,
+  "dllPath": "D:\\ProjectDream\\Project-Reboot-3.0-master\\x64\\Release\\Project Reboot 3.0.dll",
+  "injectDllOnLaunch": true,
   "arguments": [
     "-AUTH_LOGIN=unused",
     "-AUTH_PASSWORD={exchangeCode}",
@@ -112,7 +112,7 @@ Supported launch argument placeholders:
 | `{displayName}` | Account display name |
 | `{discordId}` | Discord user id |
 
-DLL injection is optional and per-build. Set `dllPath` and `injectDllOnLaunch: true` only for builds that require a local runtime DLL. If the field is empty or disabled, the launcher starts the game without DLL injection.
+DLL injection is per-build. The default Dream setup uses `D:\ProjectDream\Project-Reboot-3.0-master\x64\Release\Project Reboot 3.0.dll`; if the field is empty or disabled, the launcher starts the game without DLL injection.
 
 ## Downloads And Verify
 
